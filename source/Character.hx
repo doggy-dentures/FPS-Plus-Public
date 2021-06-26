@@ -18,6 +18,9 @@ class Character extends FlxSprite
 
 	public var canAutoAnim:Bool = true;
 
+	public var isModel:Bool = false;
+	private var model:ModelThing = null;
+
 	public function new(x:Float, y:Float, ?character:String = "bf", ?isPlayer:Bool = false)
 	{
 		animOffsets = new Map<String, Array<Dynamic>>();
@@ -31,6 +34,14 @@ class Character extends FlxSprite
 
 		switch (curCharacter)
 		{
+			case 'monkey':
+				model = new ModelThing("monkey", Main.modelView, 100, 80);
+				//model = new ModelThing("pknight", Main.modelView, 5);
+				isModel = true;
+				loadGraphicFromSprite(ModelView.sprite);
+				scale.x = scale.y = 1.3;
+				updateHitbox();
+				
 			case 'gf':
 				// GIRLFRIEND CODE
 				tex = FlxAtlasFrames.fromSparrow('assets/images/GF_assets.png', 'assets/images/GF_assets.xml');
@@ -530,9 +541,26 @@ class Character extends FlxSprite
 
 	override function update(elapsed:Float)
 	{
-		if (!isPlayer)
+		if (!isPlayer && !isModel)
 		{
 			if (animation.curAnim.name.startsWith('sing'))
+			{
+				holdTimer += elapsed;
+			}
+
+			var dadVar:Float = 4;
+
+			if (curCharacter == 'dad')
+				dadVar = 6.1;
+			if (holdTimer >= Conductor.stepCrochet * dadVar * 0.001)
+			{
+				idleEnd();
+				holdTimer = 0;
+			}
+		}
+		else if (!isPlayer && isModel)
+		{
+			if (model.currentAnim.startsWith('sing'))
 			{
 				holdTimer += elapsed;
 			}
@@ -588,7 +616,7 @@ class Character extends FlxSprite
 					else
 						playAnim('danceLeft', true);
 				default:
-					if(holdTimer == 0)
+					if(holdTimer == 0 && !isModel)
 						playAnim('idle', true);
 			}
 		}
@@ -596,7 +624,7 @@ class Character extends FlxSprite
 
 	public function idleEnd(?ignoreDebug:Bool = false)
 	{
-		if (!debugMode || ignoreDebug)
+		if (!isModel && (!debugMode || ignoreDebug))
 		{
 			switch (curCharacter)
 			{
@@ -606,34 +634,45 @@ class Character extends FlxSprite
 					playAnim('idle', true, false, animation.getByName('idle').numFrames - 1);
 			}
 		}
+		else if (isModel && (!debugMode || ignoreDebug))
+		{
+			playAnim('idle');
+		}
 	}
 
 	public function playAnim(AnimName:String, Force:Bool = false, Reversed:Bool = false, Frame:Int = 0):Void
 	{
-		animation.play(AnimName, Force, Reversed, Frame);
-
-		var daOffset = animOffsets.get(animation.curAnim.name);
-		if (animOffsets.exists(animation.curAnim.name))
+		if (isModel)
 		{
-			offset.set(daOffset[0], daOffset[1]);
+			model.playAnim(AnimName);
 		}
 		else
-			offset.set(0, 0);
-
-		if (curCharacter == 'gf')
 		{
-			if (AnimName == 'singLEFT')
-			{
-				danced = true;
-			}
-			else if (AnimName == 'singRIGHT')
-			{
-				danced = false;
-			}
+			animation.play(AnimName, Force, Reversed, Frame);
 
-			if (AnimName == 'singUP' || AnimName == 'singDOWN')
+			var daOffset = animOffsets.get(animation.curAnim.name);
+			if (animOffsets.exists(animation.curAnim.name))
 			{
-				danced = !danced;
+				offset.set(daOffset[0], daOffset[1]);
+			}
+			else
+				offset.set(0, 0);
+
+			if (curCharacter == 'gf')
+			{
+				if (AnimName == 'singLEFT')
+				{
+					danced = true;
+				}
+				else if (AnimName == 'singRIGHT')
+				{
+					danced = false;
+				}
+
+				if (AnimName == 'singUP' || AnimName == 'singDOWN')
+				{
+					danced = !danced;
+				}
 			}
 		}
 	}
@@ -690,5 +729,10 @@ class Character extends FlxSprite
 
 		}
 
+	}
+
+	override public function destroy()
+	{
+		super.destroy();
 	}
 }

@@ -54,7 +54,7 @@ class Startup extends MusicBeatState
 
         new FlxTimer().start(1.1, function(tmr:FlxTimer)
         {
-            FlxG.sound.play("assets/sounds/splashSound.ogg");   
+            //FlxG.sound.play("assets/sounds/splashSound.ogg");   
         });
         
         super.create();

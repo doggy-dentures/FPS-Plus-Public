@@ -20,7 +20,7 @@ import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
 import flixel.util.FlxTimer;
-import io.newgrounds.NG;
+// import io.newgrounds.NG;
 import lime.app.Application;
 import openfl.Assets;
 
@@ -28,7 +28,6 @@ using StringTools;
 
 class TitleVidState extends MusicBeatState
 {
-
 	var blackScreen:FlxSprite;
 	var credGroup:FlxGroup;
 	var textGroup:FlxGroup;
@@ -40,7 +39,6 @@ class TitleVidState extends MusicBeatState
 
 	override public function create():Void
 	{
-
 		super.create();
 		FlxG.mouse.visible = false;
 
@@ -74,24 +72,27 @@ class TitleVidState extends MusicBeatState
 
 		FlxTransitionableState.defaultTransIn = new TransitionData(FADE, FlxColor.BLACK, 1, new FlxPoint(0, -1), {asset: diamond, width: 32, height: 32},
 			new FlxRect(-200, -200, FlxG.width * 1.4, FlxG.height * 1.4));
-		FlxTransitionableState.defaultTransOut = new TransitionData(FADE, FlxColor.BLACK, 0.7, new FlxPoint(0, 1),
-			{asset: diamond, width: 32, height: 32}, new FlxRect(-200, -200, FlxG.width * 1.4, FlxG.height * 1.4));
+		FlxTransitionableState.defaultTransOut = new TransitionData(FADE, FlxColor.BLACK, 0.7, new FlxPoint(0, 1), {asset: diamond, width: 32, height: 32},
+			new FlxRect(-200, -200, FlxG.width * 1.4, FlxG.height * 1.4));
 
 		transIn = FlxTransitionableState.defaultTransIn;
 		transOut = FlxTransitionableState.defaultTransOut;
 
-		if(Main.video){
-			FlxG.switchState(new VideoState('assets/videos/klaskiiTitle.webm', function(){
+		// if(Main.video){
+		// 	FlxG.switchState(new VideoState('assets/videos/klaskiiTitle.webm', function(){
 
-				FlxG.camera.flash(FlxColor.WHITE, 60);
-				FlxG.sound.playMusic("assets/music/klaskiiLoop.ogg", 0.75);
-				FlxG.switchState(new TitleState());
-			}));
-		}
-		else{
-			FlxG.camera.flash(FlxColor.WHITE, 60);
-			FlxG.sound.playMusic("assets/music/klaskiiLoop.ogg", 0.75);
-			FlxG.switchState(new TitleState());
-		}
+		// 		FlxG.camera.flash(FlxColor.WHITE, 60);
+		// 		FlxG.sound.playMusic("assets/music/klaskiiLoop.ogg", 0.75);
+		// 		FlxG.switchState(new TitleState());
+		// 	}));
+		// }
+		// else{
+		// 	FlxG.camera.flash(FlxColor.WHITE, 60);
+		// 	FlxG.sound.playMusic("assets/music/klaskiiLoop.ogg", 0.75);
+		// 	FlxG.switchState(new TitleState());
+		// }
+		FlxG.camera.flash(FlxColor.WHITE, 60);
+		FlxG.sound.playMusic("assets/music/klaskiiLoop.ogg", 0.75);
+		FlxG.switchState(new TitleState());
 	}
 }

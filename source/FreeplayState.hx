@@ -65,6 +65,8 @@ class FreeplayState extends MusicBeatState
 		if (StoryMenuState.weekUnlocked[6] || isDebug)
 			addWeek(['Senpai', 'Roses', 'Thorns'], 6, ['senpai', 'senpai-angry', 'spirit']);
 
+		addWeek(['Senpai', 'Roses', 'Thorns'], 7, ['senpai', 'senpai-angry', 'spirit']);
+
 		// LOAD MUSIC
 		/*for(x in songs){
 			FlxG.sound.cache('assets/music/' + x.songName + "_Inst" + TitleState.soundExt);
