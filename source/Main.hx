@@ -19,6 +19,7 @@ class Main extends Sprite
 	//public static var video:Bool = !Sys.args().contains("-novid");
 	public static var preload:Bool = !Sys.args().contains("-nopreload");
 	public static var modelView:ModelView;
+	public static var modelViewBF:ModelView;
 
 	public function new()
 	{
@@ -36,7 +37,7 @@ class Main extends Sprite
 		#end
 
 		modelView = new ModelView();
-		
+		modelViewBF = new ModelView();
 
 		// if(video){
 		// var ourSource:String = "assets/videos/DO NOT DELETE OR GAME WILL CRASH/dontDelete.webm";

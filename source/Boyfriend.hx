@@ -19,7 +19,7 @@ class Boyfriend extends Character
 
 	override function update(elapsed:Float)
 	{
-		if (!debugMode)
+		if (!isModel && !debugMode)
 		{
 			if (animation.curAnim.name.startsWith('sing'))
 			{
@@ -38,13 +38,22 @@ class Boyfriend extends Character
 				playAnim('deathLoop');
 			}
 		}
+		else if (isModel && !debugMode)
+		{
+			if (model.currentAnim.startsWith('sing'))
+			{
+				holdTimer += elapsed;
+			}
+			else
+				holdTimer = 0;
+		}
 
 		super.update(elapsed);
 	}
 
 	override public function idleEnd(?ignoreDebug:Bool = false)
 	{
-		if (!debugMode || ignoreDebug)
+		if (!isModel && (!debugMode || ignoreDebug))
 		{
 			switch (curCharacter)
 			{
@@ -52,11 +61,15 @@ class Boyfriend extends Character
 					playAnim('idle', true, false, animation.getByName('idle').numFrames - 1);
 			}
 		}
+		else if (isModel && (!debugMode || ignoreDebug))
+		{
+			playAnim('idle');
+		}
 	}
 
 	override public function dance(?ignoreDebug:Bool = false) {
 
-		if (!debugMode || ignoreDebug)
+		if (!isModel && (!debugMode || ignoreDebug))
 		{
 			switch(curCharacter){
 

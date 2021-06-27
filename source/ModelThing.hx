@@ -33,42 +33,58 @@ class ModelThing
 	private var modelBytes:ByteArray;
 	private var modelMaterial:TextureMaterial;
 	private var mesh:Mesh;
+
 	public var animationSet:VertexAnimationSet;
+
 	private var scale:Float;
 	private var vertexAnimator:VertexAnimator;
-    private var modelView:ModelView;
-	private var fullyLoaded:Bool = false;
+
+	public var modelView:ModelView;
+
+	private var _fullyLoaded:Bool = false;
+
+	public var fullyLoaded(get, null):Bool = false;
+
 	private var animBPM:Int;
+
 	public var currentAnim:String = "";
 
-	public function new(md2Name:String, _modelView:ModelView, _scale:Float=1, _animBPM:Int=100)
+	private var initYaw:Float;
+	private var initPitch:Float;
+	private var initRoll:Float;
+
+	public function new(md2Name:String, _modelView:ModelView, _scale:Float = 1, _animBPM:Int = 100, _initYaw:Float = 0, _initPitch:Float = 0,
+			_initRoll:Float = 0)
 	{
 		if (!Assets.exists('assets/models/' + md2Name + '.md2'))
 		{
 			trace("ERROR: MODEL OF NAME '" + md2Name + "'.md2 CAN'T BE FOUND!");
 			return;
 		}
-        modelView = Main.modelView;
+		modelView = _modelView;
 
 		modelBytes = Assets.getBytes('assets/models/' + md2Name + '.md2');
 		Asset3DLibrary.loadData(modelBytes, null, null, new MD2Parser());
 		Asset3DLibrary.addEventListener(Asset3DEvent.ASSET_COMPLETE, onAssetComplete);
-        Asset3DLibrary.addEventListener(LoaderEvent.RESOURCE_COMPLETE, onResourceComplete);
+		Asset3DLibrary.addEventListener(LoaderEvent.RESOURCE_COMPLETE, onResourceComplete);
 
-        if (!Assets.exists('assets/models/' + md2Name + '.png'))
-        {
-            trace("ERROR: TEXTURE OF NAME '" + md2Name + "'.png CAN'T BE FOUND!");
-            return;
-        }
-        modelMaterial = new TextureMaterial(Cast.bitmapTexture('assets/models/' + md2Name + '.png'));
-        modelMaterial.lightPicker = modelView.lightPicker;
-        modelMaterial.gloss = 30;
-        modelMaterial.specular = 1;
-        modelMaterial.ambient = 1;
-        modelMaterial.shadowMethod = modelView.shadowMapMethod;
+		if (!Assets.exists('assets/models/' + md2Name + '.png'))
+		{
+			trace("ERROR: TEXTURE OF NAME '" + md2Name + "'.png CAN'T BE FOUND!");
+			return;
+		}
+		modelMaterial = new TextureMaterial(Cast.bitmapTexture('assets/models/' + md2Name + '.png'));
+		modelMaterial.lightPicker = modelView.lightPicker;
+		modelMaterial.gloss = 30;
+		modelMaterial.specular = 1;
+		modelMaterial.ambient = 1;
+		modelMaterial.shadowMethod = modelView.shadowMapMethod;
 
 		scale = _scale;
 		animBPM = _animBPM;
+		initYaw = _initYaw;
+		initPitch = _initPitch;
+		initRoll = _initRoll;
 	}
 
 	private function onAssetComplete(event:Asset3DEvent):Void
@@ -78,10 +94,13 @@ class ModelThing
 			mesh = cast(event.asset, Mesh);
 
 			// adjust the ogre mesh
-			//mesh.y = 120;
+			// mesh.y = 120;
 			mesh.scaleX = scale;
 			mesh.scaleY = scale;
 			mesh.scaleZ = scale;
+			mesh.yaw(initYaw);
+			mesh.pitch(initPitch);
+			mesh.roll(initRoll);
 		}
 		else if (event.asset.assetType == Asset3DType.ANIMATION_SET)
 		{
@@ -89,36 +108,36 @@ class ModelThing
 		}
 	}
 
-    private function onResourceComplete(event:LoaderEvent):Void
-    {
+	private function onResourceComplete(event:LoaderEvent):Void
+	{
 		// create animator
 		vertexAnimator = new VertexAnimator(animationSet);
-		vertexAnimator.playbackSpeed = Conductor.bpm/animBPM;
+		vertexAnimator.playbackSpeed = Conductor.bpm / animBPM;
 		mesh.animator = vertexAnimator;
 
-		fullyLoaded = true;
-        render();
-    }
+		_fullyLoaded = true;
+		render();
+	}
 
-	public function render(xPos:Float=0, yPos:Float=0, zPos:Float=0):Void
+	public function render(xPos:Float = 0, yPos:Float = 0, zPos:Float = 0):Void
 	{
-        mesh.y = yPos;
-        mesh.x = xPos;
-        mesh.z = zPos;
-        mesh.castsShadows = false;
-        mesh.material = modelMaterial;
-        modelView.addModel(mesh);
-		ModelView.addedModels.push(this);
+		mesh.y = yPos;
+		mesh.x = xPos;
+		mesh.z = zPos;
+		mesh.castsShadows = false;
+		mesh.material = modelMaterial;
+		modelView.addModel(mesh);
+		modelView.addedModels.push(this);
 		playAnim("idle");
 	}
 
-	public function playAnim(anim:String="")
+	public function playAnim(anim:String = "")
 	{
-		if (fullyLoaded)
+		if (_fullyLoaded)
 		{
 			if (animationSet.animationNames.indexOf(anim) != -1)
 			{
-				vertexAnimator.play(anim,null,0);
+				vertexAnimator.play(anim, null, 0);
 				currentAnim = anim;
 			}
 			else
@@ -134,10 +153,36 @@ class ModelThing
 			mesh.disposeWithChildren();
 		if (modelBytes != null)
 			modelBytes.clear();
-		//DD: This causes crashes, I guess?
-		// if (modelMaterial != null)
-		// 	modelMaterial.dispose();
+		// DD: This causes crashes, I guess?
+		if (modelMaterial != null)
+			modelMaterial.dispose();
 		if (animationSet != null)
 			animationSet.dispose();
+	}
+
+	public function begoneEventListeners()
+	{
+		Asset3DLibrary.removeEventListener(Asset3DEvent.ASSET_COMPLETE, onAssetComplete);
+		Asset3DLibrary.removeEventListener(LoaderEvent.RESOURCE_COMPLETE, onResourceComplete);
+	}
+
+	public function setYaw(angle:Float)
+	{
+		mesh.yaw(angle);
+	}
+
+	public function setPitch(angle:Float)
+	{
+		mesh.pitch(angle);
+	}
+
+	public function setRoll(angle:Float)
+	{
+		mesh.roll(angle);
+	}
+
+	public function get_fullyLoaded():Bool
+	{
+		return _fullyLoaded;
 	}
 }

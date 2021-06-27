@@ -1,5 +1,6 @@
 package;
 
+import away3d.errors.AbstractMethodError;
 import flixel.FlxSprite;
 import flixel.animation.FlxBaseAnimation;
 import flixel.graphics.frames.FlxAtlasFrames;
@@ -19,7 +20,11 @@ class Character extends FlxSprite
 	public var canAutoAnim:Bool = true;
 
 	public var isModel:Bool = false;
-	private var model:ModelThing = null;
+	public var beganLoading:Bool = false;
+	public var modelName:String;
+	public var modelScale:Float;
+	public var modelOrigBPM:Int;
+	public var model:ModelThing;
 
 	public function new(x:Float, y:Float, ?character:String = "bf", ?isPlayer:Bool = false)
 	{
@@ -35,13 +40,31 @@ class Character extends FlxSprite
 		switch (curCharacter)
 		{
 			case 'monkey':
-				model = new ModelThing("monkey", Main.modelView, 100, 80);
-				//model = new ModelThing("pknight", Main.modelView, 5);
+				// DD: Okay, don't load models here cuz the engine will crash with more than one model
+
+				// model = new ModelThing("monkey", Main.modelView, 100, 80);
+				// model = new ModelThing("pknight", Main.modelView, 5);
+				// model = new ModelThing("boyfriend", Main.modelView, 1.5, 80);
+				modelName = "monkey";
+				modelScale = 100;
+				modelOrigBPM = 75;
 				isModel = true;
-				loadGraphicFromSprite(ModelView.sprite);
+				loadGraphicFromSprite(Main.modelView.sprite);
 				scale.x = scale.y = 1.3;
 				updateHitbox();
-				
+
+			case 'bf-poly':
+				// model = new ModelThing("boyfriend", Main.modelViewBF, 1.5, 80);
+				// model = new ModelThing("pknight2", Main.modelViewBF, 5);
+				modelName = "boyfriend";
+				modelScale = 1.2;
+				modelOrigBPM = 75;
+				isModel = true;
+				loadGraphicFromSprite(Main.modelViewBF.sprite);
+				scale.x = scale.y = 1.6;
+				updateHitbox();
+				flipX = true;
+
 			case 'gf':
 				// GIRLFRIEND CODE
 				tex = FlxAtlasFrames.fromSparrow('assets/images/GF_assets.png', 'assets/images/GF_assets.xml');
@@ -518,7 +541,7 @@ class Character extends FlxSprite
 			flipX = !flipX;
 
 			// Doesn't flip for BF, since his are already in the right place???
-			if (!curCharacter.startsWith('bf'))
+			if (!isModel && !curCharacter.startsWith('bf'))
 			{
 				// var animArray
 				var oldRight = animation.getByName('singRIGHT').frames;
@@ -536,7 +559,6 @@ class Character extends FlxSprite
 		}
 
 		animation.finishCallback = animationEnd;
-
 	}
 
 	override function update(elapsed:Float)
@@ -616,7 +638,7 @@ class Character extends FlxSprite
 					else
 						playAnim('danceLeft', true);
 				default:
-					if(holdTimer == 0 && !isModel)
+					if (holdTimer == 0 && !isModel)
 						playAnim('idle', true);
 			}
 		}
@@ -682,11 +704,13 @@ class Character extends FlxSprite
 		animOffsets[name] = [x, y];
 	}
 
-	function animationEnd(name:String){
-
-		switch(curCharacter){
+	function animationEnd(name:String)
+	{
+		switch (curCharacter)
+		{
 			case "mom-car":
-				switch(name){
+				switch (name)
+				{
 					case "idle":
 						playAnim(name, false, false, 8);
 					case "singUP":
@@ -700,7 +724,8 @@ class Character extends FlxSprite
 				}
 
 			case "bf-car":
-				switch(name){
+				switch (name)
+				{
 					case "idle":
 						playAnim(name, false, false, 8);
 					case "singUP":
@@ -714,7 +739,8 @@ class Character extends FlxSprite
 				}
 
 			case "monster-christmas" | "monster":
-				switch(name){
+				switch (name)
+				{
 					case "idle":
 						playAnim(name, false, false, 10);
 					case "singUP":
@@ -726,9 +752,7 @@ class Character extends FlxSprite
 					case "singRIGHT":
 						playAnim(name, false, false, 6);
 				}
-
 		}
-
 	}
 
 	override public function destroy()

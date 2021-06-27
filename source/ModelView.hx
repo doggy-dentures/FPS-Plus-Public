@@ -32,13 +32,13 @@ class ModelView
 {
 	//DD: Engine vars
 	public var view:View3D;
-
 	private var cameraController:HoverController;
 	private var _lookAtPosition:Vector3D = new Vector3D();
-	#if (true)
-	//DD: Stat tracking
-	private var stats:AwayStats;
-	#end
+	
+	// #if debug
+	// //DD: Stat tracking
+	// private var stats:AwayStats;
+	// #end
 
 	//DD: Light objects
 	private var light:DirectionalLight;
@@ -48,18 +48,20 @@ class ModelView
 
 	//DD: The Flixel objects the engine will use
 	private var bmd:BitmapData;
-	public static var sprite:FlxSprite = new FlxSprite();
+	public var sprite:FlxSprite = new FlxSprite();
 	
 	//DD: Track models added if we want to remove them later
-	public static var addedModels:Array<ModelThing> = [];
+	public var addedModels:Array<ModelThing> = [];
 
 	public function new()
 	{
 		//DD: Setup 3d viewing object thing
 		view = new View3D();
-		//DD: Only 1/2 resolution cause this is all inefficient and laggy
-		view.width = FlxG.stage.stageWidth/2;
-		view.height = FlxG.stage.stageHeight/2;
+		//DD: Small resolution cause this is all inefficient and laggy
+		//view.width = FlxG.stage.stageWidth/2;
+		//view.height = FlxG.stage.stageHeight/2;
+		view.width = 450;
+		view.height = 450;
 		
 		FlxG.addChildBelowMouse(view);
 
@@ -74,9 +76,9 @@ class ModelView
 
 		shadowMapMethod = new FilteredShadowMapMethod(light);
 
-		#if (true)
-		FlxG.addChildBelowMouse(stats = new AwayStats(view));
-		#end
+		// #if debug
+		// FlxG.addChildBelowMouse(stats = new AwayStats(view));
+		// #end
 
 		bmd = new BitmapData(Std.int(view.width), Std.int(view.height), true, 0x0);
 		sprite.loadGraphic(bmd);
