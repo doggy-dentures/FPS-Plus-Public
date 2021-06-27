@@ -22,6 +22,7 @@ class Conductor
 	public static var songPosition:Float;
 	public static var lastSongPos:Float;
 	public static var offset:Float = 0;
+	public static var masterVolume:Float = 1;
 
 	public static var safeFramesOld:Float = 10;
 	public static var safeFramesNew:Float = 8;
@@ -43,6 +44,7 @@ class Conductor
 		bpmChangeMap = [];
 
 		var curBPM:Int = song.bpm;
+		masterVolume = song.vocalVolume;
 		var totalSteps:Int = 0;
 		var totalPos:Float = 0;
 		for (i in 0...song.notes.length)

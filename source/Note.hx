@@ -12,6 +12,12 @@ class Note extends FlxSprite
 {
 	public var strumTime:Float = 0;
 
+	// DD: Note pitch and other stuff
+	public var notePitch:Float = 1.0;
+	public var noteSyllable:Int = -1;
+	public var holdID:Int = 0;
+	public var noteVolume:Float = 1.0;
+
 	public var mustPress:Bool = false;
 	public var noteData:Int = 0;
 	public var canBeHit:Bool = false;

@@ -1,5 +1,11 @@
 package;
 
+import lime.media.openal.ALSource;
+import lime.media.openal.ALBuffer;
+import lime.utils.UInt8Array;
+import lime.media.vorbis.VorbisFile;
+import lime.media.openal.AL;
+import flixel.FlxState;
 import sys.FileSystem;
 // import polymod.fs.SysFileSystem;
 import Section.SwagSection;
@@ -45,6 +51,29 @@ using StringTools;
 
 class PlayState extends MusicBeatState
 {
+	// DD: Necessary OpenAL sound stuff
+	var dada = new SyllableSound(SONG.player2, "a");
+	var dadi = new SyllableSound(SONG.player2, "i");
+	var dadu = new SyllableSound(SONG.player2, "u");
+	var dade = new SyllableSound(SONG.player2, "e");
+	var dado = new SyllableSound(SONG.player2, "o");
+
+	var bfa = new SyllableSound(SONG.player1, "a");
+	var bfi = new SyllableSound(SONG.player1, "i");
+	var bfu = new SyllableSound(SONG.player1, "u");
+	var bfe = new SyllableSound(SONG.player1, "e");
+	var bfo = new SyllableSound(SONG.player1, "o");
+
+	var vorb:VorbisFile = VorbisFile.fromFile("assets/sounds/notepluck.ogg");
+	var pluckData:UInt8Array;
+	var pluckbuffer:ALBuffer = AL.createBuffer();
+	var pluck:ALSource = AL.createSource();
+
+	var bfholds:Map<Int, SyllableSound> = new Map<Int, SyllableSound>();
+	var freeID:Int = 1;
+
+	var allSyllableSounds:Array<SyllableSound>;
+
 	public static var curStage:String = '';
 	public static var SONG:SwagSong;
 	public static var isStoryMode:Bool = false;
@@ -177,6 +206,10 @@ class PlayState extends MusicBeatState
 
 	override public function create()
 	{
+		pluckData = SyllableSound.readVorbisFileBuffer(vorb);
+		AL.bufferData(pluckbuffer, AL.FORMAT_STEREO16, pluckData, pluckData.length, 44100);
+		AL.sourcei(pluck, AL.BUFFER, pluckbuffer);
+
 		FlxG.mouse.visible = false;
 
 		FlxG.sound.cache("assets/music/" + SONG.song + "_Inst" + TitleState.soundExt);
@@ -199,7 +232,7 @@ class PlayState extends MusicBeatState
 		schoolSongs = ["senpai", "roses"];
 		schoolScared = ["roses"];
 		evilSchoolSongs = ["thorns"];
-		monkeySongs = ["bopeebo"];
+		monkeySongs = ["mesh"];
 
 		canHit = !Config.noRandomTap;
 		noMissCount = 0;
@@ -221,7 +254,16 @@ class PlayState extends MusicBeatState
 		if (SONG == null)
 			SONG = Song.loadFromJson('tutorial');
 
+		// DD: If master vocal volume is null, make it not null
+		var checkifVolumeNull:Null<Float> = SONG.vocalVolume;
+		if (checkifVolumeNull == null)
+		{
+			SONG.vocalVolume = 1.0;
+		}
+
 		Conductor.changeBPM(SONG.bpm);
+
+		allSyllableSounds = [dada, dadi, dadu, dade, dado, bfa, bfi, bfu, bfe, bfo];
 
 		if (FileSystem.exists("assets/data/" + SONG.song.toLowerCase() + "/" + SONG.song.toLowerCase() + "Dialogue.txt"))
 		{
@@ -1153,6 +1195,16 @@ class PlayState extends MusicBeatState
 			{
 				var daStrumTime:Float = songNotes[0];
 				var daNoteData:Int = Std.int(songNotes[1] % 4);
+				// DD: Add some note pitch stuff
+				var daNotePitch:Float = 1.0;
+				var daNoteSyllable:Int = -1;
+				var daNoteVolume:Float = 1.0;
+				if (songNotes[3] != null)
+					daNotePitch = songNotes[3];
+				if (songNotes[4] != null)
+					daNoteSyllable = songNotes[4];
+				if (songNotes[5] != null)
+					daNoteVolume = songNotes[5];
 
 				var gottaHitNote:Bool = section.mustHitSection;
 
@@ -1169,11 +1221,23 @@ class PlayState extends MusicBeatState
 
 				var swagNote:Note = new Note(daStrumTime, daNoteData, false, oldNote);
 				swagNote.sustainLength = songNotes[2];
+				// DD: Note pitch stuff again
+				swagNote.notePitch = daNotePitch;
+				swagNote.noteSyllable = daNoteSyllable;
+				swagNote.noteVolume = daNoteVolume;
+
 				swagNote.scrollFactor.set(0, 0);
 
 				var susLength:Float = swagNote.sustainLength;
 
 				susLength = susLength / Conductor.stepCrochet;
+
+				if (susLength > 0)
+				{
+					swagNote.holdID = freeID;
+					freeID++;
+				}
+
 				unspawnNotes.push(swagNote);
 
 				for (susNote in 0...Math.floor(susLength))
@@ -1185,6 +1249,11 @@ class PlayState extends MusicBeatState
 					unspawnNotes.push(sustainNote);
 
 					sustainNote.mustPress = gottaHitNote;
+					sustainNote.holdID = swagNote.holdID;
+					sustainNote.noteSyllable = swagNote.noteSyllable;
+					sustainNote.notePitch = swagNote.notePitch;
+					sustainNote.noteVolume = swagNote.noteVolume;
+					sustainNote.sustainLength = (Math.floor(susLength) - susNote) * Conductor.stepCrochet;
 
 					if (sustainNote.mustPress)
 					{
@@ -1344,6 +1413,7 @@ class PlayState extends MusicBeatState
 			{
 				FlxG.sound.music.pause();
 				vocals.pause();
+				stopSamples();
 			}
 
 			if (!startTimer.finished)
@@ -1736,7 +1806,7 @@ class PlayState extends MusicBeatState
 						daNote.active = true;
 				}*/
 
-				if (!daNote.mustPress && daNote.wasGoodHit)
+				if (!daNote.mustPress && daNote.strumTime - Conductor.songPosition <= 0)
 				{
 					if (SONG.song != 'Tutorial')
 						camZooming = true;
@@ -1785,7 +1855,11 @@ class PlayState extends MusicBeatState
 					dad.holdTimer = 0;
 
 					if (SONG.needsVoices)
+					{
 						vocals.volume = 1;
+					}
+					// DD: Play vocal samples for player2
+					handleVocalPlayback(daNote, dada, dadi, dadu, dade, dado);
 
 					daNote.destroy();
 				}
@@ -1911,6 +1985,13 @@ class PlayState extends MusicBeatState
 		#end
 
 		// FlxG.camera.followLerp = 0.04 * (6 / Main.fpsDisplay.currentFPS);
+
+		// DD: Update vocal samples
+		for (i in allSyllableSounds)
+		{
+			if (i.isInUse())
+				i.update(FlxG.elapsed * 1000, paused);
+		}
 	}
 
 	function endSong():Void
@@ -2280,6 +2361,51 @@ class PlayState extends MusicBeatState
 			}
 		}
 
+		// DD: Handle letting go of a sustain early
+		for (checkThisChucklenuts in [upR, rightR, downR, leftR])
+		{
+			if (checkThisChucklenuts && generatedMusic)
+			{
+				notes.forEachAlive(function(daNote:Note)
+				{
+					if (daNote.canBeHit && daNote.mustPress && daNote.isSustainNote)
+					{
+						switch (daNote.noteData)
+						{
+							case 0:
+								if (leftR)
+								{
+									var sndtostop = bfholds[daNote.holdID];
+									if (sndtostop != null)
+										sndtostop.stop();
+								}
+							case 1:
+								if (downR)
+								{
+									var sndtostop = bfholds[daNote.holdID];
+									if (sndtostop != null)
+										sndtostop.stop();
+								}
+							case 2:
+								if (upR)
+								{
+									var sndtostop = bfholds[daNote.holdID];
+									if (sndtostop != null)
+										sndtostop.stop();
+								}
+							case 3:
+								if (rightR)
+								{
+									var sndtostop = bfholds[daNote.holdID];
+									if (sndtostop != null)
+										sndtostop.stop();
+								}
+						}
+					}
+				});
+			}
+		}
+
 		if (boyfriend.holdTimer > Conductor.stepCrochet * 4 * 0.001 && !up && !down && !right && !left)
 		{
 			if (boyfriend.isModel)
@@ -2578,9 +2704,68 @@ class PlayState extends MusicBeatState
 			note.wasGoodHit = true;
 			vocals.volume = 1;
 
+			// DD: Handle note and pitch for player1, similar to player2
+			handleVocalPlayback(note, bfa, bfi, bfu, bfe, bfo, bfholds);
+			// AL.sourcePlay(pluck);
+
 			note.destroy();
 
 			updateAccuracy();
+		}
+	}
+
+	public static function handleVocalPlayback(note:Note, asource:SyllableSound, isource:SyllableSound, usource:SyllableSound, esource:SyllableSound,
+			osource:SyllableSound, holds:Map<Int, SyllableSound> = null)
+	{
+		var playsnd:SyllableSound = asource;
+
+		switch (note.noteSyllable)
+		{
+			case -1:
+				return;
+			case 0:
+				playsnd = asource;
+			case 1:
+				playsnd = isource;
+			case 2:
+				playsnd = usource;
+			case 3:
+				playsnd = esource;
+			case 4:
+				playsnd = osource;
+		}
+
+		// DD: Stop all other playing sounds (per player) to prevent them playing over each other
+		// Unless it's a sustain note trail
+		if (!note.isSustainNote)
+		{
+			for (i in [asource, isource, usource, esource, osource])
+			{
+				if (i.isInUse())
+					i.stop();
+			}
+		}
+
+		// DD: The sole reason why I have to mess with OpenAL directly. Sound pitch adjustment.
+		var desiredPitch = note.notePitch;
+		playsnd.setPitch(desiredPitch);
+
+		// DD: Set volume of note too
+		playsnd.setVolume(note.noteVolume);
+
+		if (note.sustainLength > 0)
+		{
+			if (!playsnd.isInUse())
+			{
+				// playsnd.loopOn();
+				if (holds != null)
+					holds[note.holdID] = playsnd;
+				playsnd.play((note.sustainLength + Conductor.stepCrochet));
+			}
+		}
+		else
+		{
+			playsnd.play(Conductor.stepCrochet);
 		}
 	}
 
@@ -2826,6 +3011,26 @@ class PlayState extends MusicBeatState
 	}
 
 	var curLight:Int = 0;
+
+	override function switchTo(nextState:FlxState):Bool
+	{
+		stopSamples();
+		for (i in allSyllableSounds)
+		{
+			i.delete();
+		}
+		return super.switchTo(nextState);
+	}
+
+	// DD: Self-explanatory
+	function stopSamples()
+	{
+		for (i in allSyllableSounds)
+		{
+			i.stop();
+			// i.loopOff();
+		}
+	}
 
 	override public function destroy()
 	{

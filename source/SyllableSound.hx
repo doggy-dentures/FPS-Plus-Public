@@ -27,14 +27,14 @@ class SyllableSound
 	public function new(playerName:String, syllable:String, loop:Bool = true)
 	{
 		var vorb:VorbisFile;
-		if (FileSystem.exists("assets/shared/sounds/voices/" + playerName + "/" + syllable + ".ogg"))
+		if (FileSystem.exists("assets/sounds/voices/" + playerName + "/" + syllable + ".ogg"))
 		{
-			vorb = VorbisFile.fromFile("assets/shared/sounds/voices/" + playerName + "/" + syllable + ".ogg");
+			vorb = VorbisFile.fromFile("assets/sounds/voices/" + playerName + "/" + syllable + ".ogg");
 		}
 		else
 		{
-			// vorb = VorbisFile.fromFile("assets/shared/sounds/notepluckhold.ogg");
-			vorb = VorbisFile.fromFile("assets/shared/sounds/voices/test/" + syllable + ".ogg");
+			// vorb = VorbisFile.fromFile("assets/sounds/notepluckhold.ogg");
+			vorb = VorbisFile.fromFile("assets/sounds/voices/test/" + syllable + ".ogg");
 		}
 		var sndData = readVorbisFileBuffer(vorb);
 		var vorbInfo:VorbisInfo = vorb.info();
@@ -57,7 +57,7 @@ class SyllableSound
 		if (inUse[currentSource] || fadingNow[currentSource])
 			currentSource = (currentSource + 1) % sources.length;
 
-		AL.sourcei(sources[currentSource], AL.GAIN, Conductor.masterVolume * volume * FlxG.sound.volume);
+		AL.sourcef(sources[currentSource], AL.GAIN, Conductor.masterVolume * volume * FlxG.sound.volume);
 		AL.sourcePlay(sources[currentSource]);
 		inUse[currentSource] = true;
 		fadingNow[currentSource] = false;
@@ -177,7 +177,7 @@ class SyllableSound
 			AL.sourcePlay(sources[currentSource]);
 	}
 
-	// DD: Delete this thing. May cause memory leaks. Needs more testing.
+	// DD: delet this
 	public function delete()
 	{
 		forceStop();
