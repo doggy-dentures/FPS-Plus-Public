@@ -232,7 +232,7 @@ class PlayState extends MusicBeatState
 		schoolSongs = ["senpai", "roses"];
 		schoolScared = ["roses"];
 		evilSchoolSongs = ["thorns"];
-		monkeySongs = ["mesh"];
+		monkeySongs = ["mesh", "vertex"];
 
 		canHit = !Config.noRandomTap;
 		noMissCount = 0;
@@ -1479,7 +1479,8 @@ class PlayState extends MusicBeatState
 
 		if (boyfriend.isModel && !boyfriend.beganLoading)
 		{
-			dad.model.begoneEventListeners();
+			if (dad.isModel)
+				dad.model.begoneEventListeners();
 			boyfriend.beganLoading = true;
 			boyfriend.model = new ModelThing(boyfriend.modelName, Main.modelViewBF, boyfriend.modelScale, boyfriend.modelOrigBPM, 45);
 			return;
@@ -2867,6 +2868,12 @@ class PlayState extends MusicBeatState
 			}
 		}
 
+		if (FlxG.sound.music.time > Conductor.songPosition + 20 || FlxG.sound.music.time < Conductor.songPosition - 20)
+		{
+			resyncVocals();
+		}
+		
+
 		/*if (dad.curCharacter == 'spooky' && totalSteps % 4 == 2)
 			{
 				// dad.dance();
@@ -3014,7 +3021,7 @@ class PlayState extends MusicBeatState
 
 	override function switchTo(nextState:FlxState):Bool
 	{
-		stopSamples();
+		//stopSamples();
 		for (i in allSyllableSounds)
 		{
 			i.delete();

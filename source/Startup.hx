@@ -23,7 +23,7 @@ class Startup extends MusicBeatState
                                 "Satin-Panties", "High", "Milf", 
                                 "Cocoa", "Eggnog", "Winter-Horrorland", 
                                 "Senpai", "Roses", "Thorns",
-                                "Mesh"];
+                                "Mesh", "Vertex"];
                                 
     //List of character graphics and some other stuff.
     //Just in case it want to do something with it later.

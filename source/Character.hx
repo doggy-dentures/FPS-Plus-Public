@@ -46,11 +46,11 @@ class Character extends FlxSprite
 				// model = new ModelThing("pknight", Main.modelView, 5);
 				// model = new ModelThing("boyfriend", Main.modelView, 1.5, 80);
 				modelName = "monkey";
-				modelScale = 100;
+				modelScale = 90;
 				modelOrigBPM = 75;
 				isModel = true;
 				loadGraphicFromSprite(Main.modelView.sprite);
-				scale.x = scale.y = 1.3;
+				scale.x = scale.y = 1.4;
 				updateHitbox();
 
 			case 'bf-poly':

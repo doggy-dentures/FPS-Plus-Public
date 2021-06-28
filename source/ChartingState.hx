@@ -146,7 +146,7 @@ class ChartingState extends MusicBeatState
 		openfl.Lib.current.stage.frameRate = 120;
 
 		var controlInfo = new FlxText(10, 30, 0,
-			"SHIFT - Unlock cursor from grid\nALT - Triplets\nCONTROL - 1/32 Notes\nSHIFT + CONTROL - 1/64 Notes\n\nTAB - Place notes on both sides\n\nR - Top of section\nSHIFT + R - Song start",
+			"SHIFT - Unlock cursor from grid\nALT - Triplets\nCONTROL - 1/32 Notes\nSHIFT + CONTROL - 1/64 Notes\n\nTAB - Place notes on both sides\n\nR - Top of section\nSHIFT + R - Song start\n\nRight Click - Select note",
 			12);
 		controlInfo.scrollFactor.set();
 		add(controlInfo);
@@ -1929,11 +1929,11 @@ class ChartingState extends MusicBeatState
 
 	override function switchTo(nextState:FlxState):Bool
 	{
-		// stopSamples();
 		for (i in allSyllableSounds)
 		{
 			i.delete();
 		}
+		AL.sourceStop(pluck);
 		AL.deleteSource(pluck);
 		AL.deleteBuffer(pluckbuffer);
 		return super.switchTo(nextState);

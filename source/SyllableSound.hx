@@ -126,9 +126,12 @@ class SyllableSound
 	// DD: Don't call this unless the syllablesound is about to discarded.
 	public function forceStop()
 	{
-		inUse[currentSource] = false;
-		fadingNow[currentSource] = false;
-		AL.sourceStop(sources[currentSource]);
+		for (i in 0...sources.length)
+		{
+			inUse[i] = false;
+			fadingNow[i] = false;
+			AL.sourceStop(sources[i]);
+		}
 	}
 
 	public function setVolume(vol:Float)
@@ -177,7 +180,7 @@ class SyllableSound
 			AL.sourcePlay(sources[currentSource]);
 	}
 
-	// DD: delet this
+	// DD: Delet this
 	public function delete()
 	{
 		forceStop();
