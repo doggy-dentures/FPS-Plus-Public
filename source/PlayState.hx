@@ -64,15 +64,12 @@ class PlayState extends MusicBeatState
 	var bfe = new SyllableSound(SONG.player1, "e");
 	var bfo = new SyllableSound(SONG.player1, "o");
 
-	var vorb:VorbisFile = VorbisFile.fromFile("assets/sounds/notepluck.ogg");
-	var pluckData:UInt8Array;
-	var pluckbuffer:ALBuffer = AL.createBuffer();
-	var pluck:ALSource = AL.createSource();
-
 	var bfholds:Map<Int, SyllableSound> = new Map<Int, SyllableSound>();
 	var freeID:Int = 1;
 
 	var allSyllableSounds:Array<SyllableSound>;
+
+	var allFX:Array<Array<Int>> = [];
 
 	public static var curStage:String = '';
 	public static var SONG:SwagSong;
@@ -206,10 +203,6 @@ class PlayState extends MusicBeatState
 
 	override public function create()
 	{
-		pluckData = SyllableSound.readVorbisFileBuffer(vorb);
-		AL.bufferData(pluckbuffer, AL.FORMAT_STEREO16, pluckData, pluckData.length, 44100);
-		AL.sourcei(pluck, AL.BUFFER, pluckbuffer);
-
 		FlxG.mouse.visible = false;
 
 		FlxG.sound.cache("assets/music/" + SONG.song + "_Inst" + TitleState.soundExt);
@@ -784,6 +777,8 @@ class PlayState extends MusicBeatState
 
 		generateSong(SONG.song);
 
+		haxe.ds.ArraySort.sort(allFX, (a, b) -> Std.int(a[0] - b[0]));
+
 		// add(strumLine);
 
 		camFollow = new FlxObject(0, 0, 1, 1);
@@ -1196,9 +1191,11 @@ class PlayState extends MusicBeatState
 				var daStrumTime:Float = songNotes[0];
 				var daNoteData:Int = Std.int(songNotes[1] % 4);
 				// DD: Add some note pitch stuff
+
 				var daNotePitch:Float = 1.0;
 				var daNoteSyllable:Int = -1;
 				var daNoteVolume:Float = 1.0;
+
 				if (songNotes[3] != null)
 					daNotePitch = songNotes[3];
 				if (songNotes[4] != null)
@@ -1213,62 +1210,71 @@ class PlayState extends MusicBeatState
 					gottaHitNote = !section.mustHitSection;
 				}
 
-				var oldNote:Note;
-				if (unspawnNotes.length > 0)
-					oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
-				else
-					oldNote = null;
-
-				var swagNote:Note = new Note(daStrumTime, daNoteData, false, oldNote);
-				swagNote.sustainLength = songNotes[2];
-				// DD: Note pitch stuff again
-				swagNote.notePitch = daNotePitch;
-				swagNote.noteSyllable = daNoteSyllable;
-				swagNote.noteVolume = daNoteVolume;
-
-				swagNote.scrollFactor.set(0, 0);
-
-				var susLength:Float = swagNote.sustainLength;
-
-				susLength = susLength / Conductor.stepCrochet;
-
-				if (susLength > 0)
+				if (songNotes[1] < 8)
 				{
-					swagNote.holdID = freeID;
-					freeID++;
-				}
+					var oldNote:Note;
+					if (unspawnNotes.length > 0)
+						oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
+					else
+						oldNote = null;
 
-				unspawnNotes.push(swagNote);
+					var swagNote:Note = new Note(daStrumTime, daNoteData, false, oldNote);
+					swagNote.sustainLength = songNotes[2];
+					// DD: Note pitch stuff again
+					swagNote.notePitch = daNotePitch;
+					swagNote.noteSyllable = daNoteSyllable;
+					swagNote.noteVolume = daNoteVolume;
 
-				for (susNote in 0...Math.floor(susLength))
-				{
-					oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
+					swagNote.scrollFactor.set(0, 0);
 
-					var sustainNote:Note = new Note(daStrumTime + (Conductor.stepCrochet * susNote) + Conductor.stepCrochet, daNoteData, false, oldNote, true);
-					sustainNote.scrollFactor.set();
-					unspawnNotes.push(sustainNote);
+					var susLength:Float = swagNote.sustainLength;
 
-					sustainNote.mustPress = gottaHitNote;
-					sustainNote.holdID = swagNote.holdID;
-					sustainNote.noteSyllable = swagNote.noteSyllable;
-					sustainNote.notePitch = swagNote.notePitch;
-					sustainNote.noteVolume = swagNote.noteVolume;
-					sustainNote.sustainLength = (Math.floor(susLength) - susNote) * Conductor.stepCrochet;
+					susLength = susLength / Conductor.stepCrochet;
 
-					if (sustainNote.mustPress)
+					if (susLength > 0)
 					{
-						sustainNote.x += FlxG.width / 2; // general offset
+						swagNote.holdID = freeID;
+						freeID++;
+					}
+					unspawnNotes.push(swagNote);
+
+					for (susNote in 0...Math.floor(susLength))
+					{
+						oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
+
+						var sustainNote:Note = new Note(daStrumTime + (Conductor.stepCrochet * susNote) + Conductor.stepCrochet, daNoteData, false, oldNote,
+							true);
+						sustainNote.scrollFactor.set();
+						unspawnNotes.push(sustainNote);
+
+						sustainNote.mustPress = gottaHitNote;
+						sustainNote.holdID = swagNote.holdID;
+						sustainNote.noteSyllable = swagNote.noteSyllable;
+						sustainNote.notePitch = swagNote.notePitch;
+						sustainNote.noteVolume = swagNote.noteVolume;
+						sustainNote.sustainLength = (Math.floor(susLength) - susNote) * Conductor.stepCrochet;
+
+						if (sustainNote.mustPress)
+						{
+							sustainNote.x += FlxG.width / 2; // general offset
+						}
+					}
+
+					swagNote.mustPress = gottaHitNote;
+
+					if (swagNote.mustPress)
+					{
+						swagNote.x += FlxG.width / 2; // general offset
+					}
+					else
+					{
 					}
 				}
-
-				swagNote.mustPress = gottaHitNote;
-
-				if (swagNote.mustPress)
-				{
-					swagNote.x += FlxG.width / 2; // general offset
-				}
 				else
 				{
+					// DD: I got lazy and reused the pitch/syllable/vol slots for FX notes
+					allFX.push([songNotes[0], songNotes[3], songNotes[4], songNotes[5]]);
+					trace("FX Note Detected");
 				}
 			}
 			daBeats += 1;
@@ -1520,8 +1526,16 @@ class PlayState extends MusicBeatState
 
 		super.update(elapsed);
 
+		// DD: 3D Views need updating
 		Main.modelView.update();
 		Main.modelViewBF.update();
+
+		// DD: Grab earliest FX and see if it's time to activate it
+		if (allFX.length > 0 && allFX[0][0] <= Conductor.songPosition)
+		{
+			doEffect();
+			allFX.remove(allFX[0]);
+		}
 
 		switch (Config.accuracy)
 		{
@@ -1992,6 +2006,128 @@ class PlayState extends MusicBeatState
 		{
 			if (i.isInUse())
 				i.update(FlxG.elapsed * 1000, paused);
+		}
+	}
+
+	function doEffect()
+	{
+		var effect = allFX[0];
+		// var effectTime = effect[0];
+		var effectType = Std.int(effect[1]);
+		var effectTarget = Std.int(effect[2]);
+		var effectValue = Std.int(effect[3]);
+
+		var who:Array<Character> = [];
+		switch (effectTarget)
+		{
+			case 0:
+				who.push(boyfriend);
+			case 1:
+				who.push(dad);
+			case 2:
+				who.push(boyfriend);
+				who.push(dad);
+		}
+
+		for (char in who)
+		{
+			switch (effectType)
+			{
+				case 1:
+					// DD: Rotate yaw
+					if (char.isModel)
+					{
+						if (effectValue != 0)
+						{
+							char.spinYaw = true;
+							char.spinYawVal = effectValue;
+						}
+						else
+						{
+							char.spinYaw = false;
+							char.model.mesh.rotationY = 0;
+							// char.model.modelView.cameraController.panAngle = 0;
+						}
+					}
+				case 2:
+					// DD: Rotate pitch
+					if (char.isModel)
+					{
+						if (effectValue != 0)
+						{
+							char.spinPitch = true;
+							char.spinPitchVal = effectValue;
+						}
+						else
+						{
+							char.spinPitch = false;
+							char.model.mesh.rotationX = 0;
+							// char.model.modelView.cameraController.tiltAngle = 0;
+						}
+					}
+				case 3:
+					// DD: Rotate roll
+					if (char.isModel)
+					{
+						if (effectValue != 0)
+						{
+							char.spinRoll = true;
+							char.spinRollVal = effectValue;
+						}
+						else
+						{
+							char.spinRoll = false;
+							char.model.mesh.rotationZ = 0;
+							// char.model.modelView.cameraController.tiltAngle = 0;
+						}
+					}
+				case 4:
+					// DD: Bob up and down
+					if (effectValue != 0)
+					{
+						if (char.yTween != null)
+						{
+							char.yTween.cancel();
+						}
+						else
+						{
+							char.originalY = char.y;
+						}
+						char.yTween = FlxTween.tween(char, {y:char.originalY+effectValue}, Conductor.stepCrochet*16/1000, {type:PINGPONG});
+					}
+					else
+					{
+						if (char.yTween != null)
+						{
+							char.yTween.cancel();
+							char.y = char.originalY;
+						}
+						// char.model.modelView.cameraController.tiltAngle = 0;
+					}
+				case 5:
+					// DD: Bob left and right
+					if (effectValue != 0)
+					{
+						if (char.xTween != null)
+						{
+							char.xTween.cancel();
+						}
+						else
+						{
+							char.originalX = char.x;
+						}
+						char.xTween = FlxTween.tween(char, {x:char.originalX+effectValue}, Conductor.stepCrochet*16/1000, {type:PINGPONG});
+					}
+					else
+					{
+						if (char.xTween != null)
+						{
+							char.xTween.cancel();
+							char.x = char.originalX;
+						}
+						// char.model.modelView.cameraController.tiltAngle = 0;
+					}
+			}
 		}
 	}
 
@@ -2707,7 +2843,6 @@ class PlayState extends MusicBeatState
 
 			// DD: Handle note and pitch for player1, similar to player2
 			handleVocalPlayback(note, bfa, bfi, bfu, bfe, bfo, bfholds);
-			// AL.sourcePlay(pluck);
 
 			note.destroy();
 
@@ -2718,6 +2853,10 @@ class PlayState extends MusicBeatState
 	public static function handleVocalPlayback(note:Note, asource:SyllableSound, isource:SyllableSound, usource:SyllableSound, esource:SyllableSound,
 			osource:SyllableSound, holds:Map<Int, SyllableSound> = null)
 	{
+		// DD: Don't play FX notes
+		if (note.absoluteNumber == 8)
+			return;
+
 		var playsnd:SyllableSound = asource;
 
 		switch (note.noteSyllable)
@@ -2872,7 +3011,6 @@ class PlayState extends MusicBeatState
 		{
 			resyncVocals();
 		}
-		
 
 		/*if (dad.curCharacter == 'spooky' && totalSteps % 4 == 2)
 			{
@@ -3021,11 +3159,7 @@ class PlayState extends MusicBeatState
 
 	override function switchTo(nextState:FlxState):Bool
 	{
-		//stopSamples();
-		for (i in allSyllableSounds)
-		{
-			i.delete();
-		}
+		stopSamples();
 		return super.switchTo(nextState);
 	}
 
@@ -3041,6 +3175,12 @@ class PlayState extends MusicBeatState
 
 	override public function destroy()
 	{
+		for (i in 0...allSyllableSounds.length)
+		{
+			allSyllableSounds[i].delete();
+		}
+		allSyllableSounds.resize(0);
+
 		if (dad.model != null)
 			dad.model.begoneEventListeners();
 		if (boyfriend.model != null)

@@ -32,7 +32,7 @@ class ModelThing
 {
 	private var modelBytes:ByteArray;
 	private var modelMaterial:TextureMaterial;
-	private var mesh:Mesh;
+	public var mesh:Mesh;
 
 	public var animationSet:VertexAnimationSet;
 
@@ -85,6 +85,8 @@ class ModelThing
 		initYaw = _initYaw;
 		initPitch = _initPitch;
 		initRoll = _initRoll;
+		modelView.cameraController.panAngle = 90;
+		modelView.cameraController.tiltAngle = 0;
 	}
 
 	private function onAssetComplete(event:Asset3DEvent):Void

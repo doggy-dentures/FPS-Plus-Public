@@ -32,7 +32,7 @@ class ModelView
 {
 	//DD: Engine vars
 	public var view:View3D;
-	private var cameraController:HoverController;
+	public var cameraController:HoverController;
 	private var _lookAtPosition:Vector3D = new Vector3D();
 	
 	// #if debug

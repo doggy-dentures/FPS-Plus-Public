@@ -155,12 +155,12 @@ class ChartingState extends MusicBeatState
 
 		var gridBG2Length = 4;
 
-		gridBG = FlxGridOverlay.create(GRID_SIZE, GRID_SIZE, GRID_SIZE * 8, GRID_SIZE * 16, true, 0xFFE7E7E7, 0xFFC5C5C5);
+		gridBG = FlxGridOverlay.create(GRID_SIZE, GRID_SIZE, GRID_SIZE * 9, GRID_SIZE * 16, true, 0xFFE7E7E7, 0xFFC5C5C5);
 
 		// gridBGTriple = FlxGridOverlay.create(GRID_SIZE, Std.int(GRID_SIZE * 4/3), GRID_SIZE * 8, GRID_SIZE * 16, true, 0xFFE7E7E7, 0xFFC5C5C5);
 		// gridBGTriple.visible = false;
 
-		gridBG2 = FlxGridOverlay.create(GRID_SIZE, GRID_SIZE, GRID_SIZE * 8, GRID_SIZE * 16 * gridBG2Length, true, 0xFF515151, 0xFF3D3D3D);
+		gridBG2 = FlxGridOverlay.create(GRID_SIZE, GRID_SIZE, GRID_SIZE * 9, GRID_SIZE * 16 * gridBG2Length, true, 0xFF515151, 0xFF3D3D3D);
 
 		gridBGOverlay = FlxGridOverlay.create(GRID_SIZE * 4, GRID_SIZE * 4, GRID_SIZE * 8, GRID_SIZE * 16 * gridBG2Length, true, 0xFFFFFFFF, 0xFFB5A5CE);
 		gridBGOverlay.blend = "multiply";
@@ -179,8 +179,8 @@ class ChartingState extends MusicBeatState
 		leftIcon.iconScale = 0.5;
 		rightIcon.iconScale = 0.5;
 
-		leftIcon.setPosition((gridBG.width / 4) - (leftIcon.width / 4), -75);
-		rightIcon.setPosition((gridBG.width / 4) * 3 - (rightIcon.width / 4), -75);
+		leftIcon.setPosition((GRID_SIZE * 2) - (leftIcon.width / 4), -75);
+		rightIcon.setPosition((GRID_SIZE * 2) * 3 - (rightIcon.width / 4), -75);
 
 		leftIconBack = new FlxSprite(leftIcon.x - 2.5, leftIcon.y - 2.5).makeGraphic(75, 75, 0xFF00AAFF);
 		rightIconBack = new FlxSprite(rightIcon.x - 2.5, rightIcon.y - 2.5).makeGraphic(75, 75, 0xFF00AAFF);
@@ -190,7 +190,7 @@ class ChartingState extends MusicBeatState
 		add(leftIcon);
 		add(rightIcon);
 
-		var gridBlackLine:FlxSprite = new FlxSprite(gridBG.x + gridBG.width / 2).makeGraphic(2, Std.int(gridBG2.height), FlxColor.BLACK);
+		var gridBlackLine:FlxSprite = new FlxSprite(gridBG.x + GRID_SIZE * 4).makeGraphic(2, Std.int(gridBG2.height), FlxColor.BLACK);
 		add(gridBlackLine);
 
 		for (i in 1...gridBG2Length)
@@ -261,6 +261,7 @@ class ChartingState extends MusicBeatState
 		add(strumLine);
 
 		var tabs = [
+			{name: "FX", label: 'FX'},
 			{name: "Song", label: 'Song'},
 			{name: "Section", label: 'Section'},
 			{name: "Note", label: 'Note'}
@@ -269,13 +270,14 @@ class ChartingState extends MusicBeatState
 		UI_box = new FlxUITabMenu(null, tabs, true);
 
 		UI_box.resize(300, 400);
-		UI_box.x = FlxG.width / 2;
+		UI_box.x = FlxG.width / 2 + GRID_SIZE;
 		UI_box.y = 20;
 		add(UI_box);
 
 		addSongUI();
 		addSectionUI();
 		addNoteUI();
+		addEffectUI();
 		updateHeads();
 
 		add(curRenderedNotes);
@@ -501,7 +503,7 @@ class ChartingState extends MusicBeatState
 		// Flips BF Notes
 		var bSideButton:FlxButton = new FlxButton(10, 200, "Flip BF Notes", function()
 		{
-			var flipTable:Array<Int> = [3, 2, 1, 0, 7, 6, 5, 4];
+			var flipTable:Array<Int> = [3, 2, 1, 0, 7, 6, 5, 4, 8];
 
 			// [noteStrum, noteData, noteSus]
 			for (x in _song.notes[curSection].sectionNotes)
@@ -524,7 +526,7 @@ class ChartingState extends MusicBeatState
 		// Flips Opponent Notes
 		var bSideButton2:FlxButton = new FlxButton(10, 220, "Flip Opp Notes", function()
 		{
-			var flipTable:Array<Int> = [3, 2, 1, 0, 7, 6, 5, 4];
+			var flipTable:Array<Int> = [3, 2, 1, 0, 7, 6, 5, 4, 8];
 
 			// [noteStrum, noteData, noteSus]
 			for (x in _song.notes[curSection].sectionNotes)
@@ -729,6 +731,37 @@ class ChartingState extends MusicBeatState
 		UI_box.addGroup(tab_group_note);
 	}
 
+	var stepperNoteFXTarget:FlxUINumericStepper;
+	var stepperNoteFXType:FlxUINumericStepper;
+	var stepperNoteFXVal:FlxUINumericStepper;
+
+	function addEffectUI():Void
+	{
+		var tab_group_fx = new FlxUI(null, UI_box);
+		tab_group_fx.name = 'FX';
+
+		var fxTypeText = new FlxText(10, 130, 0, "FX Type", 9);
+		stepperNoteFXType = new FlxUINumericStepper(10, 150, 1, 0, 0);
+		stepperNoteFXType.name = 'note_fxtype';
+
+		var fxTargetText = new FlxText(10, 190, 0, "FX Target", 9);
+		stepperNoteFXTarget = new FlxUINumericStepper(10, 210, 1, 0, 0, 3);
+		stepperNoteFXTarget.name = 'note_fxwho';
+
+		var fxValText = new FlxText(10, 250, 0, "FX Value", 9);
+		stepperNoteFXVal = new FlxUINumericStepper(10, 270, 1, 0);
+		stepperNoteFXVal.name = 'note_fxval';
+
+		tab_group_fx.add(fxTypeText);
+		tab_group_fx.add(stepperNoteFXType);
+		tab_group_fx.add(fxTargetText);
+		tab_group_fx.add(stepperNoteFXTarget);
+		tab_group_fx.add(fxValText);
+		tab_group_fx.add(stepperNoteFXVal);
+
+		UI_box.addGroup(tab_group_fx);
+	}
+
 	function loadSong(daSong:String):Void
 	{
 		if (FlxG.sound.music != null)
@@ -843,6 +876,33 @@ class ChartingState extends MusicBeatState
 			{
 				if (curSelectedNote == null)
 					return;
+				curSelectedNote[5] = nums.value;
+			}
+			else if (wname == 'note_fxtype')
+			{
+				if (curSelectedNote == null || curSelectedNote[1] != 8)
+				{
+					trace("Naw man");
+					return;
+				}
+				curSelectedNote[3] = nums.value;
+			}
+			else if (wname == 'note_fxwho')
+			{
+				if (curSelectedNote == null || curSelectedNote[1] != 8)
+				{
+					trace("Naw man 2");
+					return;
+				}
+				curSelectedNote[4] = Math.floor(nums.value);
+			}
+			else if (wname == 'note_fxval')
+			{
+				if (curSelectedNote == null || curSelectedNote[1] != 8)
+				{
+					trace("Naw man 3");
+					return;
+				}
 				curSelectedNote[5] = nums.value;
 			}
 		}
@@ -1523,47 +1583,60 @@ class ChartingState extends MusicBeatState
 
 	function updateNoteUI():Void
 	{
-		if (curSelectedNote != null)
+		if (curSelectedNote != null && curSelectedNote[1] != 8)
 		{
 			stepperSusLength.value = curSelectedNote[2];
 			// DD: UI for pitch shift buttons
-			if (curSelectedNote[3] != null)
+			var xvalue:Int = (Math.round(Math.log(Math.pow(curSelectedNote[3], 12)) / Math.log(2)));
+			for (i in 0...pitchButtons.length)
 			{
-				var xvalue:Int = (Math.round(Math.log(Math.pow(curSelectedNote[3], 12)) / Math.log(2)));
-				for (i in 0...pitchButtons.length)
-				{
-					if (((xvalue % 12 >= 0 ? xvalue % 12 : 12 + xvalue % 12) == i))
-						pitchButtons[i].setLabelFormat(null, 12, FlxColor.RED);
-					else
-						pitchButtons[i].setLabelFormat(null, 12, FlxColor.BLACK);
-				}
-				stepperNoteOctave.visible = true;
-				stepperNoteOctave.value = Math.floor(xvalue / 12);
+				if (((xvalue % 12 >= 0 ? xvalue % 12 : 12 + xvalue % 12) == i))
+					pitchButtons[i].setLabelFormat(null, 12, FlxColor.RED);
+				else
+					pitchButtons[i].setLabelFormat(null, 12, FlxColor.BLACK);
 			}
-			else
-			{
-				for (i in pitchButtons)
-					i.setLabelFormat(null, 12, FlxColor.WHITE);
-				stepperNoteOctave.visible = false;
-			}
+			stepperNoteOctave.visible = true;
+			stepperNoteOctave.value = Math.floor(xvalue / 12);
 			// DD: UI for syllable buttons
-			if (curSelectedNote[4] != null)
+			for (i in -1...5)
 			{
-				for (i in -1...5)
-				{
-					if (curSelectedNote[4] == i)
-						syllableButtons[i + 1].setLabelFormat(null, 12, FlxColor.RED);
-					else
-						syllableButtons[i + 1].setLabelFormat(null, 12, FlxColor.BLACK);
-				}
-			}
-			else
-			{
-				for (i in syllableButtons)
-					i.setLabelFormat(null, 12, FlxColor.WHITE);
+				if (curSelectedNote[4] == i)
+					syllableButtons[i + 1].setLabelFormat(null, 12, FlxColor.RED);
+				else
+					syllableButtons[i + 1].setLabelFormat(null, 12, FlxColor.BLACK);
 			}
 			// DD: UI for note volume
+			stepperNoteVolume.visible = true;
 			stepperNoteVolume.value = curSelectedNote[5];
+		}
+		else
+		{
+			for (i in syllableButtons)
+				i.setLabelFormat(null, 12, FlxColor.WHITE);
+			for (i in pitchButtons)
+				i.setLabelFormat(null, 12, FlxColor.WHITE);
+			stepperNoteOctave.visible = false;
+			stepperNoteVolume.visible = false;
+		}
+		updateFXUI();
+	}
+
+	function updateFXUI()
+	{
+		if (curSelectedNote != null && curSelectedNote[1] == 8)
+		{
+			stepperNoteFXType.visible = true;
+			stepperNoteFXTarget.visible = true;
+			stepperNoteFXVal.visible = true;
+			stepperNoteFXType.value = curSelectedNote[3];
+			stepperNoteFXTarget.value = curSelectedNote[4];
+			stepperNoteFXVal.value = curSelectedNote[5];
+		}
+		else
+		{
+			stepperNoteFXType.visible = false;
+			stepperNoteFXTarget.visible = false;
+			stepperNoteFXVal.visible = false;
 		}
 	}
 
@@ -1620,11 +1693,11 @@ class ChartingState extends MusicBeatState
 	private function addNotesToRender(curSec:Int, ?secOffset:Int = 0)
 	{
 		var section:Array<Dynamic> = _song.notes[curSec + secOffset].sectionNotes;
-		var noteAdjust:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7];
+		var noteAdjust:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 		if (_song.notes[curSec + secOffset].mustHitSection)
 		{
-			noteAdjust = [4, 5, 6, 7, 0, 1, 2, 3];
+			noteAdjust = [4, 5, 6, 7, 0, 1, 2, 3, 8];
 		}
 
 		for (i in section)
@@ -1750,11 +1823,11 @@ class ChartingState extends MusicBeatState
 
 	private function addNote(_noteStrum:Float, _noteData:Int):Void
 	{
-		var noteAdjust:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7];
+		var noteAdjust:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
 		if (_song.notes[curSection].mustHitSection)
 		{
-			noteAdjust = [4, 5, 6, 7, 0, 1, 2, 3];
+			noteAdjust = [4, 5, 6, 7, 0, 1, 2, 3, 8];
 		}
 
 		var noteData = noteAdjust[_noteData];
@@ -1773,7 +1846,7 @@ class ChartingState extends MusicBeatState
 
 		curSelectedNote = _song.notes[curSection].sectionNotes[_song.notes[curSection].sectionNotes.length - 1];
 
-		if (FlxG.keys.pressed.TAB)
+		if (FlxG.keys.pressed.TAB && noteData != 8)
 		{
 			_song.notes[curSection].sectionNotes.push([
 				noteStrum,
@@ -1916,7 +1989,8 @@ class ChartingState extends MusicBeatState
 		for (i in 0..._song.notes[curSection].sectionNotes.length)
 		{
 			var note:Array<Dynamic> = _song.notes[curSection].sectionNotes[i];
-			note[1] = (note[1] + 4) % 8;
+			if (note[1] < 8)
+				note[1] = (note[1] + 4) % 8;
 			_song.notes[curSection].sectionNotes[i] = note;
 			updateGrid();
 		}
@@ -1929,14 +2003,21 @@ class ChartingState extends MusicBeatState
 
 	override function switchTo(nextState:FlxState):Bool
 	{
-		for (i in allSyllableSounds)
+		stopSamples();
+		return super.switchTo(nextState);
+	}
+
+	override public function destroy()
+	{
+		for (i in 0...allSyllableSounds.length)
 		{
-			i.delete();
+			allSyllableSounds[i].delete();
 		}
+		allSyllableSounds.resize(0);
 		AL.sourceStop(pluck);
 		AL.deleteSource(pluck);
 		AL.deleteBuffer(pluckbuffer);
-		return super.switchTo(nextState);
+		super.destroy();
 	}
 
 	function stopSamples()

@@ -1,5 +1,7 @@
 package;
 
+import away3d.core.base.data.Face;
+import flixel.tweens.FlxTween;
 import away3d.errors.AbstractMethodError;
 import flixel.FlxSprite;
 import flixel.animation.FlxBaseAnimation;
@@ -25,6 +27,17 @@ class Character extends FlxSprite
 	public var modelScale:Float;
 	public var modelOrigBPM:Int;
 	public var model:ModelThing;
+
+	public var spinYaw:Bool = false;
+	public var spinYawVal:Int = 0;
+	public var spinPitch:Bool = false;
+	public var spinPitchVal:Int = 0;
+	public var spinRoll:Bool = false;
+	public var spinRollVal:Int = 0;
+	public var yTween:FlxTween;
+	public var xTween:FlxTween;
+	public var originalY:Float;
+	public var originalX:Float;
 
 	public function new(x:Float, y:Float, ?character:String = "bf", ?isPlayer:Bool = false)
 	{
@@ -606,6 +619,24 @@ class Character extends FlxSprite
 		}
 
 		super.update(elapsed);
+
+		if (isModel)
+		{
+			if (spinYaw)
+			{
+				model.mesh.yaw(elapsed * spinYawVal);
+			}
+
+			if (spinPitch)
+			{
+				model.mesh.pitch(elapsed * spinPitchVal);
+			}
+
+			if (spinRoll)
+			{
+				model.mesh.roll(elapsed * spinRollVal);
+			}
+		}
 	}
 
 	private var danced:Bool = false;
