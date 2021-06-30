@@ -236,7 +236,7 @@ class ChartingState extends MusicBeatState
 		allSyllableSounds = [dada, dadi, dadu, dade, dado, bfa, bfi, bfu, bfe, bfo];
 
 		FlxG.mouse.visible = true;
-		FlxG.save.bind(_song.song.replace(" ", "-"), "Chart Editor Autosaves");
+		FlxG.save.bind(_song.song.replace(" ", "-"), "dd-monkey/Chart Editor Autosaves");
 
 		tempBpm = _song.bpm;
 
@@ -1033,7 +1033,7 @@ class ChartingState extends MusicBeatState
 			FlxG.sound.music.stop();
 			vocals.stop();
 
-			FlxG.save.bind('data');
+			FlxG.save.bind('data', 'dd-monkey');
 
 			FlxG.switchState(new PlayState());
 		}
@@ -1681,13 +1681,14 @@ class ChartingState extends MusicBeatState
 			}
 		 */
 
-		for (i in 0...4)
-		{
-			// trace(_song.notes[curSection + i] != null);
+		// for (i in 0...4)
+		// {
+		// 	// trace(_song.notes[curSection + i] != null);
 
-			if (_song.notes[curSection + i] != null)
-				addNotesToRender(curSection, i);
-		}
+		// 	if (_song.notes[curSection + i] != null)
+		// 		addNotesToRender(curSection, i);
+		// }
+		addNotesToRender(curSection, 0);
 	}
 
 	private function addNotesToRender(curSec:Int, ?secOffset:Int = 0)
@@ -1716,7 +1717,7 @@ class ChartingState extends MusicBeatState
 			var daSyllable = i[4];
 			var daVolume = i[5];
 
-			var note:Note = new Note(daStrumTime, daNoteInfo % 4, true);
+			var note:Note = new Note(daStrumTime, (daNoteInfo == 8 ? daNoteInfo : daNoteInfo % 4), true);
 			note.absoluteNumber = daNoteInfo;
 			note.sustainLength = daSus;
 
@@ -1839,9 +1840,9 @@ class ChartingState extends MusicBeatState
 			noteStrum,
 			noteData,
 			noteSus,
-			curSelectedPitch,
-			curSelectedSyllable,
-			curSelectedVolume
+			(noteData == 8 ? 0 : curSelectedPitch),
+			(noteData == 8 ? 0 : curSelectedSyllable),
+			(noteData == 8 ? 0 : curSelectedVolume)
 		]);
 
 		curSelectedNote = _song.notes[curSection].sectionNotes[_song.notes[curSection].sectionNotes.length - 1];
@@ -2005,6 +2006,14 @@ class ChartingState extends MusicBeatState
 	{
 		stopSamples();
 		return super.switchTo(nextState);
+	}
+
+	override public function onFocusLost():Void
+	{
+		for (i in allSyllableSounds)
+			i.stop();
+
+		super.onFocusLost();
 	}
 
 	override public function destroy()

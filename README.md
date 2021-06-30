@@ -1,5 +1,8 @@
 ![](/art/readme/logo.png)
 
+# You'll need this:
+`haxelib install away3d`
+
 *Finally, it's open source.*
 
 # Friday Night Funkin' FPS Plus

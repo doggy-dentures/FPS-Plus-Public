@@ -45,7 +45,7 @@ class TitleVidState extends MusicBeatState
 		FlxG.sound.cache("assets/music/klaskiiLoop.ogg");
 		FlxG.sound.playMusic('assets/music/freakyMenu' + TitleState.soundExt, 0);
 
-		FlxG.save.bind('data');
+		FlxG.save.bind('data', 'dd-monkey');
 
 		Highscore.load();
 

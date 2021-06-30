@@ -58,7 +58,10 @@ class Boyfriend extends Character
 			switch (curCharacter)
 			{
 				default:
-					playAnim('idle', true, false, animation.getByName('idle').numFrames - 1);
+					if (animation.getByName('idle') != null)
+						playAnim('idle', true, false, animation.getByName('idle').numFrames - 1);
+					else
+						playAnim('idle', true, false);
 			}
 		}
 		else if (isModel && (!debugMode || ignoreDebug))

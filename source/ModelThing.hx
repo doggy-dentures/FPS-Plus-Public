@@ -41,17 +41,15 @@ class ModelThing
 
 	public var modelView:ModelView;
 
-	private var _fullyLoaded:Bool = false;
-
-	public var fullyLoaded(get, null):Bool = false;
+	public var fullyLoaded:Bool = false;
 
 	private var animBPM:Int;
 
 	public var currentAnim:String = "";
 
-	private var initYaw:Float;
-	private var initPitch:Float;
-	private var initRoll:Float;
+	public var initYaw:Float;
+	public var initPitch:Float;
+	public var initRoll:Float;
 
 	public function new(md2Name:String, _modelView:ModelView, _scale:Float = 1, _animBPM:Int = 100, _initYaw:Float = 0, _initPitch:Float = 0,
 			_initRoll:Float = 0)
@@ -94,9 +92,6 @@ class ModelThing
 		if (event.asset.assetType == Asset3DType.MESH)
 		{
 			mesh = cast(event.asset, Mesh);
-
-			// adjust the ogre mesh
-			// mesh.y = 120;
 			mesh.scaleX = scale;
 			mesh.scaleY = scale;
 			mesh.scaleZ = scale;
@@ -112,12 +107,11 @@ class ModelThing
 
 	private function onResourceComplete(event:LoaderEvent):Void
 	{
-		// create animator
 		vertexAnimator = new VertexAnimator(animationSet);
 		vertexAnimator.playbackSpeed = Conductor.bpm / animBPM;
 		mesh.animator = vertexAnimator;
 
-		_fullyLoaded = true;
+		fullyLoaded = true;
 		render();
 	}
 
@@ -135,7 +129,7 @@ class ModelThing
 
 	public function playAnim(anim:String = "")
 	{
-		if (_fullyLoaded)
+		if (fullyLoaded)
 		{
 			if (animationSet.animationNames.indexOf(anim) != -1)
 			{
@@ -155,7 +149,6 @@ class ModelThing
 			mesh.disposeWithChildren();
 		if (modelBytes != null)
 			modelBytes.clear();
-		// DD: This causes crashes, I guess?
 		if (modelMaterial != null)
 			modelMaterial.dispose();
 		if (animationSet != null)
@@ -168,23 +161,19 @@ class ModelThing
 		Asset3DLibrary.removeEventListener(LoaderEvent.RESOURCE_COMPLETE, onResourceComplete);
 	}
 
-	public function setYaw(angle:Float)
+	public function addYaw(angle:Float)
 	{
 		mesh.yaw(angle);
 	}
 
-	public function setPitch(angle:Float)
+	public function addPitch(angle:Float)
 	{
 		mesh.pitch(angle);
 	}
 
-	public function setRoll(angle:Float)
+	public function addRoll(angle:Float)
 	{
 		mesh.roll(angle);
 	}
 
-	public function get_fullyLoaded():Bool
-	{
-		return _fullyLoaded;
-	}
 }

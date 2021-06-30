@@ -1,5 +1,7 @@
 package;
 
+import flixel.util.FlxDestroyUtil;
+import flixel.addons.plugin.taskManager.FlxTask;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.FlxState;
@@ -32,6 +34,9 @@ class TitleState extends MusicBeatState
 	static var initialized:Bool = true;
 	static public var soundExt:String = ".ogg";
 
+	var logoAddTween:FlxTween;
+	var logoMonkeyTween:FlxTween;
+
 	override public function create():Void
 	{
 		//Polymod.init({modRoot: "mods", dirs: ['introMod']});
@@ -41,7 +46,7 @@ class TitleState extends MusicBeatState
 		super.create();
 		FlxG.mouse.visible = false;
 
-		FlxG.save.bind('data');
+		FlxG.save.bind('data', 'dd-monkey');
 
 		Highscore.load();
 
@@ -69,6 +74,7 @@ class TitleState extends MusicBeatState
 
 	var logoBl:FlxSprite;
 	var gfDance:FlxSprite;
+	var logoAdd:FlxSprite;
 	var danceLeft:Bool = false;
 	var titleText:FlxSprite;
 
@@ -84,18 +90,31 @@ class TitleState extends MusicBeatState
 		logoBl.animation.play('bump');
 		logoBl.updateHitbox();
 
+		logoAdd = new FlxSprite();
+		logoAdd.loadGraphic('assets/images/logoadd.png');
+		logoAdd.scale.x = logoAdd.scale.y = 0.6;
+		logoAdd.antialiasing = true;
+		logoAdd.updateHitbox();
+		logoAdd.setPosition(logoBl.x + logoBl.width/2, logoBl.y + logoBl.height/2 + 100);
+
 		var bgGrad:FlxSprite = new FlxSprite().loadGraphic('assets/images/titleBG.png');
 		bgGrad.antialiasing = true;
 		bgGrad.updateHitbox();
 
-		gfDance = new FlxSprite(FlxG.width * 0.4, FlxG.height * 0.07);
-		gfDance.frames = FlxAtlasFrames.fromSparrow('assets/images/gfDanceTitle.png', 'assets/images/gfDanceTitle.xml');
-		gfDance.animation.addByIndices('danceLeft', 'gfDance', [30, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "", 24, false);
-		gfDance.animation.addByIndices('danceRight', 'gfDance', [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29], "", 24, false);
+		gfDance = new FlxSprite();
+		gfDance.loadGraphic('assets/images/logoMonkey.png');
+		gfDance.setPosition(FlxG.width - gfDance.width - 20, FlxG.height * 0.07);
 		gfDance.antialiasing = true;
+
+		// gfDance = new FlxSprite(FlxG.width * 0.4, FlxG.height * 0.07);
+		// gfDance.frames = FlxAtlasFrames.fromSparrow('assets/images/gfDanceTitle.png', 'assets/images/gfDanceTitle.xml');
+		// gfDance.animation.addByIndices('danceLeft', 'gfDance', [30, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], "", 24, false);
+		// gfDance.animation.addByIndices('danceRight', 'gfDance', [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29], "", 24, false);
+		// gfDance.antialiasing = true;
 		add(bgGrad);
 		add(gfDance);
 		add(logoBl);
+		add(logoAdd);
 
 		titleText = new FlxSprite(100, FlxG.height * 0.8);
 		titleText.frames = FlxAtlasFrames.fromSparrow('assets/images/titleEnter.png', 'assets/images/titleEnter.xml');
@@ -167,10 +186,17 @@ class TitleState extends MusicBeatState
 		logoBl.animation.play('bump', true);
 		danceLeft = !danceLeft;
 
-		if (danceLeft)
-			gfDance.animation.play('danceRight', true);
-		else
-			gfDance.animation.play('danceLeft', true);
+		if (logoAddTween != null)
+			logoAddTween.cancel();
+		if (logoMonkeyTween != null)
+			logoMonkeyTween.cancel();
+		logoAddTween = FlxTween.tween(logoAdd, {"scale.x": 0.61, "scale.y": 0.61}, Conductor.stepCrochet*1/1000, {onComplete: function(_){logoAdd.scale.x = logoAdd.scale.y = 0.6;}});
+		logoMonkeyTween = FlxTween.tween(gfDance, {"scale.x": 1.02, "scale.y": 1.02}, Conductor.stepCrochet*1/1000, {onComplete: function(_){gfDance.scale.x = gfDance.scale.y = 1.0;}});
+
+		// if (danceLeft)
+		// 	gfDance.animation.play('danceRight', true);
+		// else
+		// 	gfDance.animation.play('danceLeft', true);
 
 		FlxG.log.add(curBeat);
 	}
@@ -186,5 +212,12 @@ class TitleState extends MusicBeatState
 			Config.configCheck();
 			skippedIntro = true;
 		}
+	}
+
+	override public function destroy()
+	{
+		FlxDestroyUtil.destroy(logoAddTween);
+		FlxDestroyUtil.destroy(logoMonkeyTween);
+		super.destroy();
 	}
 }

@@ -26,6 +26,7 @@ class Note extends FlxSprite
 	public var glowPath:String = (Config.noteGlow) ? "fpsPlus/" : "";
 	public var prevNote:Note;
 	public var absoluteNumber:Int;
+	public var rootNote:Note;
 
 	public var sustainLength:Float = 0;
 	public var isSustainNote:Bool = false;
@@ -40,7 +41,7 @@ class Note extends FlxSprite
 	public static var BLUE_NOTE:Int = 1;
 	public static var RED_NOTE:Int = 3;
 
-	public function new(_strumTime:Float, _noteData:Int, ?_editor = false, ?_prevNote:Note, ?_sustainNote:Bool = false)
+	public function new(_strumTime:Float, _noteData:Int, ?_editor = false, ?_prevNote:Note, ?_sustainNote:Bool = false, ?_rootNote:Note)
 	{
 		super();
 
@@ -49,13 +50,14 @@ class Note extends FlxSprite
 
 		prevNote = _prevNote;
 		isSustainNote = _sustainNote;
+		rootNote = _rootNote;
 
 		x += 100;
 		// MAKE SURE ITS DEFINITELY OFF SCREEN?
 		y -= 2000;
 		
 		if(!_editor){
-			strumTime = _strumTime + Config.offset;
+			strumTime = _strumTime /*+ Config.offset*/;
 			if(strumTime < 0) {
 				strumTime = 0;
 			}
@@ -147,6 +149,8 @@ class Note extends FlxSprite
 			case 3:
 				x += swagWidth * 3;
 				animation.play('redScroll');
+			case 8:
+				loadGraphic('assets/images/FX.png');
 		}
 
 		// trace(prevNote);
@@ -210,7 +214,7 @@ class Note extends FlxSprite
 		{
 			// The * 0.5 us so that its easier to hit them too late, instead of too early
 			if (strumTime > Conductor.songPosition - Conductor.safeZoneOffset
-				&& strumTime < Conductor.songPosition + (Conductor.safeZoneOffset))
+				&& strumTime < Conductor.songPosition + (Conductor.safeZoneOffset * 0.6))
 			{
 				canBeHit = true;
 			}

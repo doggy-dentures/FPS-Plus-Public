@@ -50,7 +50,7 @@ class TitleStateNormal extends MusicBeatState
 
 		super.create();
 
-		FlxG.save.bind('data');
+		FlxG.save.bind('data', 'dd-monkey');
 
 		Highscore.load();
 

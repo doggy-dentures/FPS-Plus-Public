@@ -25,7 +25,7 @@ class ConfigMenu extends MusicBeatState
 
 	var configText:FlxText;
 	var descText:FlxText;
-	var configSelected:Int = 0;
+	var configSelected:Int = 1;
 	
 	var offsetValue:Float;
 	var accuracyType:String;
@@ -411,8 +411,8 @@ class ConfigMenu extends MusicBeatState
 		configSelected += huh;
 			
 		if (configSelected > settingText.length - 1)
-			configSelected = 0;
-		if (configSelected < 0)
+			configSelected = 1;
+		if (configSelected < 1)
 			configSelected = settingText.length - 1;
 			
 	}
@@ -421,7 +421,7 @@ class ConfigMenu extends MusicBeatState
 
         configText.text = "";
 
-        for(i in 0...settingText.length - 1){
+        for(i in 1...settingText.length - 1){
 
             var textStart = (i == configSelected) ? ">" : "  ";
             configText.text += textStart + settingText[i] + ": " + getSetting(i) + "\n";

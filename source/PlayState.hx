@@ -1,5 +1,10 @@
 package;
 
+import flixel.util.FlxDestroyUtil;
+import haxe.display.Display.EnumFieldOriginKind;
+import openfl.filters.ColorMatrixFilter;
+import openfl.filters.BlurFilter;
+import openfl.filters.BitmapFilter;
 import lime.media.openal.ALSource;
 import lime.media.openal.ALBuffer;
 import lime.utils.UInt8Array;
@@ -70,6 +75,12 @@ class PlayState extends MusicBeatState
 	var allSyllableSounds:Array<SyllableSound>;
 
 	var allFX:Array<Array<Int>> = [];
+
+	var filters:Array<BitmapFilter> = [];
+	var filterMap:Map<String, {filter:BitmapFilter, ?onUpdate:Void->Void}>;
+
+	var errorMessage:FlxSprite;
+	var errorSound:FlxSound;
 
 	public static var curStage:String = '';
 	public static var SONG:SwagSong;
@@ -143,6 +154,8 @@ class PlayState extends MusicBeatState
 	private var iconP2:HealthIcon;
 	private var camHUD:FlxCamera;
 	private var camGame:FlxCamera;
+	private var camNotes:FlxCamera;
+	private var camTop:FlxCamera;
 
 	var dialogue:Array<String> = ['strange code', '>:]'];
 
@@ -203,6 +216,41 @@ class PlayState extends MusicBeatState
 
 	override public function create()
 	{
+		filterMap = [
+			"Grayscale" => {
+				var matrix:Array<Float> = [
+					0.5, 0.5, 0.5, 0, 0,
+					0.5, 0.5, 0.5, 0, 0,
+					0.5, 0.5, 0.5, 0, 0,
+					  0,   0,   0, 1, 0,
+				];
+
+				{filter: new ColorMatrixFilter(matrix)}
+			},
+			"Blur" => {
+				filter: new BlurFilter(16, 16),
+			},
+			"Invert" => {
+				var matrix:Array<Float> = [
+					-1,  0,  0, 0, 255,
+					 0, -1,  0, 0, 255,
+					 0,  0, -1, 0, 255,
+					 0,  0,  0, 1,   0,
+				];
+
+				{filter: new ColorMatrixFilter(matrix)}
+			},
+		];
+
+		camNotes = new FlxCamera();
+		camNotes.setFilters(filters);
+		camNotes.filtersEnabled = true;
+
+		camTop = new FlxCamera();
+
+		errorMessage = new FlxSprite().loadGraphic('assets/images/errormessage.png');
+		errorSound = new FlxSound().loadEmbedded('assets/sounds/error' + TitleState.soundExt);
+
 		FlxG.mouse.visible = false;
 
 		FlxG.sound.cache("assets/music/" + SONG.song + "_Inst" + TitleState.soundExt);
@@ -225,7 +273,7 @@ class PlayState extends MusicBeatState
 		schoolSongs = ["senpai", "roses"];
 		schoolScared = ["roses"];
 		evilSchoolSongs = ["thorns"];
-		monkeySongs = ["mesh", "vertex"];
+		monkeySongs = ["mesh", "vertex", "polygon"];
 
 		canHit = !Config.noRandomTap;
 		noMissCount = 0;
@@ -235,9 +283,13 @@ class PlayState extends MusicBeatState
 		camGame = new FlxCamera();
 		camHUD = new FlxCamera();
 		camHUD.bgColor.alpha = 0;
+		camNotes.bgColor.alpha = 0;
+		camTop.bgColor.alpha = 0;
 
 		FlxG.cameras.reset(camGame);
 		FlxG.cameras.add(camHUD);
+		FlxG.cameras.add(camNotes);
+		FlxG.cameras.add(camTop);
 
 		FlxCamera.defaultCameras = [camGame];
 
@@ -741,6 +793,12 @@ class PlayState extends MusicBeatState
 				gf.y += 300;
 		}
 
+		if (SONG.player1 == 'bf-poly')
+		{
+			boyfriend.x += 50;
+			boyfriend.y -= 140;
+		}
+
 		add(gf);
 
 		if (curStage == 'limo')
@@ -830,13 +888,14 @@ class PlayState extends MusicBeatState
 		add(scoreTxt);
 
 		strumLineNotes.cameras = [camHUD];
-		notes.cameras = [camHUD];
+		notes.cameras = [camNotes];
 		healthBar.cameras = [camHUD];
 		healthBarBG.cameras = [camHUD];
 		iconP1.cameras = [camHUD];
 		iconP2.cameras = [camHUD];
 		scoreTxt.cameras = [camHUD];
 		doof.cameras = [camHUD];
+		errorMessage.cameras = [camTop];
 
 		healthBar.visible = false;
 		healthBarBG.visible = false;
@@ -890,6 +949,8 @@ class PlayState extends MusicBeatState
 					schoolIntro(doof);
 				case 'thorns':
 					schoolIntro(doof);
+				case 'vertex' | 'mesh' | 'polygon':
+					blenderIntro(doof);
 				default:
 					startCountdown();
 			}
@@ -998,6 +1059,37 @@ class PlayState extends MusicBeatState
 					startCountdown();
 
 				remove(black);
+			}
+		});
+	}
+
+	function blenderIntro(?dialogueBox:DialogueBox):Void
+	{
+		var black:FlxSprite = new FlxSprite(-100, -100).makeGraphic(FlxG.width * 2, FlxG.height * 2, FlxColor.BLACK);
+		black.scrollFactor.set();
+		add(black);
+
+		new FlxTimer().start(0.3, function(tmr:FlxTimer)
+		{
+			black.alpha -= 0.15;
+
+			if (black.alpha > 0)
+			{
+				tmr.reset(0.3);
+			}
+			else
+			{
+				if (dialogueBox != null)
+				{
+					inCutscene = true;
+
+					add(dialogueBox);
+				}
+				else
+					startCountdown();
+
+				remove(black);
+				FlxDestroyUtil.destroy(tmr);
 			}
 		});
 	}
@@ -1243,7 +1335,7 @@ class PlayState extends MusicBeatState
 						oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
 
 						var sustainNote:Note = new Note(daStrumTime + (Conductor.stepCrochet * susNote) + Conductor.stepCrochet, daNoteData, false, oldNote,
-							true);
+							true, swagNote);
 						sustainNote.scrollFactor.set();
 						unspawnNotes.push(sustainNote);
 
@@ -1475,7 +1567,7 @@ class PlayState extends MusicBeatState
 		if (dad.isModel && !dad.beganLoading)
 		{
 			dad.beganLoading = true;
-			dad.model = new ModelThing(dad.modelName, Main.modelView, dad.modelScale, dad.modelOrigBPM);
+			dad.model = new ModelThing(dad.modelName, Main.modelView, dad.modelScale, dad.modelOrigBPM, dad.initYaw);
 			return;
 		}
 		else if (dad.isModel && dad.beganLoading && !dad.model.fullyLoaded)
@@ -1488,7 +1580,7 @@ class PlayState extends MusicBeatState
 			if (dad.isModel)
 				dad.model.begoneEventListeners();
 			boyfriend.beganLoading = true;
-			boyfriend.model = new ModelThing(boyfriend.modelName, Main.modelViewBF, boyfriend.modelScale, boyfriend.modelOrigBPM, 45);
+			boyfriend.model = new ModelThing(boyfriend.modelName, Main.modelViewBF, boyfriend.modelScale, boyfriend.modelOrigBPM, boyfriend.initYaw);
 			return;
 		}
 		else if (boyfriend.isModel && boyfriend.beganLoading && !boyfriend.model.fullyLoaded)
@@ -2018,6 +2110,7 @@ class PlayState extends MusicBeatState
 		var effectValue = Std.int(effect[3]);
 
 		var who:Array<Character> = [];
+
 		switch (effectTarget)
 		{
 			case 0:
@@ -2045,7 +2138,7 @@ class PlayState extends MusicBeatState
 						else
 						{
 							char.spinYaw = false;
-							char.model.mesh.rotationY = 0;
+							char.model.mesh.rotationY = char.model.initYaw;
 							// char.model.modelView.cameraController.panAngle = 0;
 						}
 					}
@@ -2061,7 +2154,7 @@ class PlayState extends MusicBeatState
 						else
 						{
 							char.spinPitch = false;
-							char.model.mesh.rotationX = 0;
+							char.model.mesh.rotationX = char.model.initPitch;
 							// char.model.modelView.cameraController.tiltAngle = 0;
 						}
 					}
@@ -2077,7 +2170,7 @@ class PlayState extends MusicBeatState
 						else
 						{
 							char.spinRoll = false;
-							char.model.mesh.rotationZ = 0;
+							char.model.mesh.rotationZ = char.model.initRoll;
 							// char.model.modelView.cameraController.tiltAngle = 0;
 						}
 					}
@@ -2089,11 +2182,11 @@ class PlayState extends MusicBeatState
 						{
 							char.yTween.cancel();
 						}
-						else
+						if (char.originalY < 0)
 						{
 							char.originalY = char.y;
 						}
-						char.yTween = FlxTween.tween(char, {y:char.originalY+effectValue}, Conductor.stepCrochet*16/1000, {type:PINGPONG});
+						char.yTween = FlxTween.tween(char, {y: char.originalY + effectValue}, Conductor.stepCrochet * 16 / 1000, {type: PINGPONG});
 					}
 					else
 					{
@@ -2112,11 +2205,11 @@ class PlayState extends MusicBeatState
 						{
 							char.xTween.cancel();
 						}
-						else
+						if (char.originalX < 0)
 						{
 							char.originalX = char.x;
 						}
-						char.xTween = FlxTween.tween(char, {x:char.originalX+effectValue}, Conductor.stepCrochet*16/1000, {type:PINGPONG});
+						char.xTween = FlxTween.tween(char, {x: char.originalX + effectValue}, Conductor.stepCrochet * 16 / 1000, {type: PINGPONG});
 					}
 					else
 					{
@@ -2127,6 +2220,107 @@ class PlayState extends MusicBeatState
 						}
 						// char.model.modelView.cameraController.tiltAngle = 0;
 					}
+				case 6:
+					// DD: Move in a circle
+					// Don't use this, it looks bad
+					if (effectValue != 0)
+					{
+						if (char.circleTween != null)
+						{
+							char.circleTween.cancel();
+						}
+						if (char.originalX < 0)
+						{
+							char.originalX = char.x;
+						}
+						if (char.originalY < 0)
+						{
+							char.originalY = char.y;
+						}
+
+						var clockwise = (effectValue > 0 ? true : false);
+						if (!clockwise)
+							effectValue = -effectValue;
+
+						char.circleTween = FlxTween.circularMotion(char, char.originalX + effectValue / 2, char.originalY + effectValue / 2, effectValue / 2,
+							0, clockwise, Conductor.stepCrochet * 32 / 1000, true, {
+								type: LOOPING
+							});
+					}
+					else
+					{
+						if (char.circleTween != null)
+						{
+							char.circleTween.cancel();
+							char.x = char.originalX;
+							char.y = char.originalY;
+						}
+						// char.model.modelView.cameraController.tiltAngle = 0;
+					}
+				case 7:
+					// DD: Grayscale notes
+					if (effectValue > 0)
+						filters.push(filterMap.get("Grayscale").filter);
+					else
+						filters.remove(filterMap.get("Grayscale").filter);
+				case 8:
+					// DD: Blur Notes
+					if (effectValue > 0)
+						filters.push(filterMap.get("Blur").filter);
+					else
+						filters.remove(filterMap.get("Blur").filter);
+				case 9:
+					// DD: Error message
+					switch (effectValue)
+					{
+						case 0:
+							remove(errorMessage);
+						case 1:
+							errorMessage.x = 80;
+							errorMessage.y = (Config.downscroll ? FlxG.height - errorMessage.height : 0);
+							add(errorMessage);
+							errorSound.play();
+						case 2:
+							errorMessage.x = FlxG.width - errorMessage.width - 80;
+							errorMessage.y = (Config.downscroll ? FlxG.height - errorMessage.height : 0);
+							add(errorMessage);
+							errorSound.play();
+						case 3:
+							errorMessage.x = 80;
+							errorMessage.y = (Config.downscroll ? 0 : FlxG.height - errorMessage.height);
+							add(errorMessage);
+							errorSound.play();
+						case 4:
+							errorMessage.x = FlxG.width - errorMessage.width - 80;
+							errorMessage.y = (Config.downscroll ? 0 : FlxG.height - errorMessage.height);
+							add(errorMessage);
+							errorSound.play();
+						case 5:
+							errorMessage.screenCenter(XY);
+							add(errorMessage);
+							errorSound.play();
+						case 6:
+							errorMessage.x = 0;
+							errorMessage.y = 0;
+							errorSound.play();
+							FlxTween.circularMotion(errorMessage, FlxG.width / 2 - errorMessage.width / 2, FlxG.height / 2 - errorMessage.height / 2,
+								errorMessage.width / 2, 0, true, 6, true, {
+									onStart: function(_)
+									{
+										add(errorMessage);
+									},
+									onComplete: function(_)
+									{
+										remove(errorMessage);
+									}
+								});
+					}
+				case 10:
+					// DD: Invert Notes
+					if (effectValue > 0)
+						filters.push(filterMap.get("Invert").filter);
+					else
+						filters.remove(filterMap.get("Invert").filter);
 			}
 		}
 	}
@@ -2151,9 +2345,17 @@ class PlayState extends MusicBeatState
 
 			if (storyPlaylist.length <= 0)
 			{
-				FlxG.sound.playMusic("assets/music/klaskiiLoop.ogg", 0.75);
-
-				FlxG.switchState(new StoryMenuState());
+				if (SONG.song.toLowerCase() == 'polygon')
+				{
+					persistentUpdate = false;
+					persistentDraw = false;
+					openSubState(new BSODSubstate());
+				}
+				else
+				{
+					FlxG.sound.playMusic("assets/music/klaskiiLoop.ogg", 0.75);
+					FlxG.switchState(new StoryMenuState());
+				}
 
 				// if ()
 				StoryMenuState.weekUnlocked[Std.int(Math.min(storyWeek + 1, StoryMenuState.weekUnlocked.length - 1))] = true;
@@ -2475,7 +2677,10 @@ class PlayState extends MusicBeatState
 			{
 				notes.forEachAlive(function(daNote:Note)
 				{
-					if (daNote.canBeHit && daNote.mustPress && daNote.isSustainNote)
+					if (daNote.canBeHit
+						&& daNote.mustPress
+						&& daNote.isSustainNote
+						&& (daNote.rootNote == null || daNote.rootNote.wasGoodHit))
 					{
 						switch (daNote.noteData)
 						{
@@ -2854,7 +3059,7 @@ class PlayState extends MusicBeatState
 			osource:SyllableSound, holds:Map<Int, SyllableSound> = null)
 	{
 		// DD: Don't play FX notes
-		if (note.absoluteNumber == 8)
+		if (note.absoluteNumber == 8 || note.noteData == 8)
 			return;
 
 		var playsnd:SyllableSound = asource;
@@ -3171,6 +3376,14 @@ class PlayState extends MusicBeatState
 			i.stop();
 			// i.loopOff();
 		}
+	}
+
+	override public function onFocusLost():Void
+	{
+		for (i in allSyllableSounds)
+			i.stop();
+
+		super.onFocusLost();
 	}
 
 	override public function destroy()

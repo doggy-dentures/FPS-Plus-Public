@@ -36,8 +36,10 @@ class Character extends FlxSprite
 	public var spinRollVal:Int = 0;
 	public var yTween:FlxTween;
 	public var xTween:FlxTween;
-	public var originalY:Float;
-	public var originalX:Float;
+	public var originalY:Float = -1;
+	public var originalX:Float = -1;
+	public var circleTween:FlxTween;
+	public var initYaw:Float = 0;
 
 	public function new(x:Float, y:Float, ?character:String = "bf", ?isPlayer:Bool = false)
 	{
@@ -50,32 +52,34 @@ class Character extends FlxSprite
 		var tex:FlxAtlasFrames;
 		antialiasing = true;
 
+		var loadFrom = (isPlayer ? Main.modelViewBF.sprite : Main.modelView.sprite);
+
 		switch (curCharacter)
 		{
 			case 'monkey':
 				// DD: Okay, don't load models here cuz the engine will crash with more than one model
 
 				// model = new ModelThing("monkey", Main.modelView, 100, 80);
-				// model = new ModelThing("pknight", Main.modelView, 5);
 				// model = new ModelThing("boyfriend", Main.modelView, 1.5, 80);
 				modelName = "monkey";
 				modelScale = 90;
 				modelOrigBPM = 75;
 				isModel = true;
-				loadGraphicFromSprite(Main.modelView.sprite);
+				loadGraphicFromSprite(loadFrom);
 				scale.x = scale.y = 1.4;
+				initYaw = 0;
 				updateHitbox();
 
 			case 'bf-poly':
 				// model = new ModelThing("boyfriend", Main.modelViewBF, 1.5, 80);
-				// model = new ModelThing("pknight2", Main.modelViewBF, 5);
 				modelName = "boyfriend";
 				modelScale = 1.2;
 				modelOrigBPM = 75;
 				isModel = true;
-				loadGraphicFromSprite(Main.modelViewBF.sprite);
+				loadGraphicFromSprite(loadFrom);
 				scale.x = scale.y = 1.6;
 				updateHitbox();
+				initYaw = 45;
 				flipX = true;
 
 			case 'gf':
@@ -624,17 +628,17 @@ class Character extends FlxSprite
 		{
 			if (spinYaw)
 			{
-				model.mesh.yaw(elapsed * spinYawVal);
+				model.addYaw(elapsed * spinYawVal);
 			}
 
 			if (spinPitch)
 			{
-				model.mesh.pitch(elapsed * spinPitchVal);
+				model.addPitch(elapsed * spinPitchVal);
 			}
 
 			if (spinRoll)
 			{
-				model.mesh.roll(elapsed * spinRollVal);
+				model.addRoll(elapsed * spinRollVal);
 			}
 		}
 	}
