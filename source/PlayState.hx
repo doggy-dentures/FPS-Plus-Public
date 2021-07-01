@@ -1964,11 +1964,10 @@ class PlayState extends MusicBeatState
 					if (SONG.needsVoices)
 					{
 						vocals.volume = 1;
+						unmuteBF();
 					}
-					// DD: Play vocal samples for player2
-					handleVocalPlayback(daNote, dada, dadi, dadu, dade, dado);
 
-					daNote.destroy();
+					daNote.kill();
 				}
 
 				if (Config.downscroll)
@@ -1992,6 +1991,7 @@ class PlayState extends MusicBeatState
 						{
 							noteMiss(daNote.noteData, 0.055, false, true);
 							vocals.volume = 0;
+							muteBF();
 						}
 
 						daNote.alpha = 0.3;
@@ -2004,7 +2004,7 @@ class PlayState extends MusicBeatState
 					if (daNote.prevNote.tooLate)
 					{
 						daNote.tooLate = true;
-						daNote.destroy();
+						daNote.kill();
 					}
 
 					if (daNote.prevNote.wasGoodHit)
@@ -2021,32 +2021,36 @@ class PlayState extends MusicBeatState
 								{
 									noteMiss(0, 0.03, true, true);
 									vocals.volume = 0;
+									muteBF();
 									daNote.tooLate = true;
-									daNote.destroy();
+									daNote.kill();
 								}
 							case 1:
 								if (!downP)
 								{
 									noteMiss(1, 0.03, true, true);
 									vocals.volume = 0;
+									muteBF();
 									daNote.tooLate = true;
-									daNote.destroy();
+									daNote.kill();
 								}
 							case 2:
 								if (!upP)
 								{
 									noteMiss(2, 0.03, true, true);
 									vocals.volume = 0;
+									muteBF();
 									daNote.tooLate = true;
-									daNote.destroy();
+									daNote.kill();
 								}
 							case 3:
 								if (!rightP)
 								{
 									noteMiss(3, 0.03, true, true);
 									vocals.volume = 0;
+									muteBF();
 									daNote.tooLate = true;
-									daNote.destroy();
+									daNote.kill();
 								}
 						}
 					}
@@ -2061,7 +2065,7 @@ class PlayState extends MusicBeatState
 							daNote.active = false;
 							daNote.visible = false;
 
-							daNote.destroy();
+							daNote.kill();
 						}
 					}
 					else
@@ -2072,14 +2076,33 @@ class PlayState extends MusicBeatState
 							misses += 1;
 							updateAccuracy();
 							vocals.volume = 0;
+							muteBF();
 						}
 
 						daNote.active = false;
 						daNote.visible = false;
 
-						daNote.destroy();
+						daNote.kill();
 					}
 				}
+			});
+
+			notes.forEach(function(daNote:Note)
+			{
+				// DD: Play vocal samples for player2
+				if (!daNote.samplePlayed && !daNote.mustPress && daNote.strumTime - Conductor.songPosition <= 0)
+				{
+					handleVocalPlayback(daNote, dada, dadi, dadu, dade, dado);
+					daNote.samplePlayed = true;
+				}
+
+				// DD: Vocal playback for BF is timed vocals are turned off
+				if (!daNote.samplePlayed && daNote.mustPress && !Config.timedVocals && daNote.strumTime - Conductor.songPosition <= 0)
+				{
+					handleVocalPlayback(daNote, bfa, bfi, bfu, bfe, bfo);
+					daNote.samplePlayed = true;
+				}
+
 			});
 		}
 
@@ -2422,6 +2445,7 @@ class PlayState extends MusicBeatState
 		var noteDiff:Float = Math.abs(strumtime - Conductor.songPosition);
 		// boyfriend.playAnim('hey');
 		vocals.volume = 1;
+		unmuteBF();
 
 		var placement:String = Std.string(combo);
 
@@ -2710,7 +2734,7 @@ class PlayState extends MusicBeatState
 			{
 				notes.forEachAlive(function(daNote:Note)
 				{
-					if (daNote.canBeHit && daNote.mustPress && daNote.isSustainNote)
+					if (Config.timedVocals && daNote.canBeHit && daNote.mustPress && daNote.isSustainNote)
 					{
 						switch (daNote.noteData)
 						{
@@ -2981,8 +3005,9 @@ class PlayState extends MusicBeatState
 		{
 			noteMiss(note.noteData, 0.05, true, true);
 			note.prevNote.tooLate = true;
-			note.prevNote.destroy();
+			note.prevNote.kill();
 			vocals.volume = 0;
+			muteBF();
 		}
 		else if (!note.wasGoodHit)
 		{
@@ -3045,11 +3070,13 @@ class PlayState extends MusicBeatState
 
 			note.wasGoodHit = true;
 			vocals.volume = 1;
+			unmuteBF();
 
 			// DD: Handle note and pitch for player1, similar to player2
-			handleVocalPlayback(note, bfa, bfi, bfu, bfe, bfo, bfholds);
+			if (Config.timedVocals)
+				handleVocalPlayback(note, bfa, bfi, bfu, bfe, bfo, bfholds);
 
-			note.destroy();
+			note.kill();
 
 			updateAccuracy();
 		}
@@ -3361,6 +3388,24 @@ class PlayState extends MusicBeatState
 	}
 
 	var curLight:Int = 0;
+
+	function muteBF()
+	{
+		if (!Config.timedVocals)
+		{
+			for (i in [bfa, bfi, bfu, bfe, bfo])
+				i.mute();
+		}
+	}
+
+	function unmuteBF()
+	{
+		if (!Config.timedVocals)
+		{
+			for (i in [bfa, bfi, bfu, bfe, bfo])
+				i.unmute();
+		}
+	}
 
 	override function switchTo(nextState:FlxState):Bool
 	{

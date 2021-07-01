@@ -27,6 +27,7 @@ class Note extends FlxSprite
 	public var prevNote:Note;
 	public var absoluteNumber:Int;
 	public var rootNote:Note;
+	public var samplePlayed:Bool = false;
 
 	public var sustainLength:Float = 0;
 	public var isSustainNote:Bool = false;

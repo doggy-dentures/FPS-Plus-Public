@@ -25,7 +25,7 @@ class ConfigMenu extends MusicBeatState
 
 	var configText:FlxText;
 	var descText:FlxText;
-	var configSelected:Int = 1;
+	var configSelected:Int = 0;
 	
 	var offsetValue:Float;
 	var accuracyType:String;
@@ -39,13 +39,14 @@ class ConfigMenu extends MusicBeatState
 	var glowValue:Bool;
 	var randomTapValue:Bool;
 	var noCapValue:Bool;
+	var timedVocalsValue:Bool;
 	
 	var canChangeItems:Bool = true;
 
 	var leftRightCount:Int = 0;
 	
 	var settingText:Array<String> = [
-									"NOTE OFFSET", 
+									"TIMED VOCALS", 
 									"ACCURACY DISPLAY", 
 									"UNCAP FRAMERATE",
 									"NEW INPUT",
@@ -59,7 +60,7 @@ class ConfigMenu extends MusicBeatState
 									];
 								
 	var settingDesc:Array<String> = [
-									"Adjust note timings.\nPress \"ENTER\" to start the offset calibration." + (FlxG.save.data.ee1?"\nHold \"SHIFT\" to force the pixel calibration.\nHold \"CTRL\" to force the normal calibration.":""), 
+									"Makes Boyfriend's vocals synced to your key presses (Blender week only). Play badly and he sings badly. Play good and he sings good.", 
 									"What type of accuracy calculation you want to use. Simple is just notes hit / total notes. Complex also factors in how early or late a note was.", 
 									"Uncaps the framerate during gameplay.",
 									"Use the FPS Plus input system.",
@@ -117,6 +118,7 @@ class ConfigMenu extends MusicBeatState
 		glowValue = Config.noteGlow;
 		randomTapValue = Config.noRandomTap;
 		noCapValue = Config.noFpsCap;
+		timedVocalsValue = Config.timedVocals;
 		
 		var tex = FlxAtlasFrames.fromSparrow('assets/images/FNF_main_menu_assets.png', 'assets/images/FNF_main_menu_assets.xml');
 		var optionTitle:FlxSprite = new FlxSprite(0, 55);
@@ -177,52 +179,11 @@ class ConfigMenu extends MusicBeatState
 				}
 				
 				switch(configSelected){
-					case 0: //Offset
-						if (controls.RIGHT_P)
-						{
+					case 0: //Timed Vocals
+						if (controls.RIGHT_P || controls.LEFT_P || controls.ACCEPT) {
 							FlxG.sound.play('assets/sounds/scrollMenu' + TitleState.soundExt);
-							offsetValue += 1;
+							timedVocalsValue = !timedVocalsValue;
 						}
-						
-						if (controls.LEFT_P)
-						{
-							FlxG.sound.play('assets/sounds/scrollMenu' + TitleState.soundExt);
-							offsetValue -= 1;
-						}
-						
-						if (controls.RIGHT)
-						{
-							leftRightCount++;
-							
-							if(leftRightCount > 64) {
-								offsetValue += 1;
-								textUpdate();
-							}
-						}
-						
-						if (controls.LEFT)
-						{
-							leftRightCount++;
-							
-							if(leftRightCount > 64) {
-								offsetValue -= 1;
-								textUpdate();
-							}
-						}
-						
-						if(!controls.RIGHT && !controls.LEFT)
-						{
-							leftRightCount = 0;
-						}
-
-						if(FlxG.keys.justPressed.ENTER){
-							canChangeItems = false;
-							FlxG.sound.music.fadeOut(0.3);
-							Config.write(offsetValue, accuracyType, healthValue / 10.0, healthDrainValue / 10.0, iconValue, downValue, inputValue, glowValue, randomTapValue, noCapValue);
-							AutoOffsetState.forceEasterEgg = FlxG.keys.pressed.SHIFT ? 1 : (FlxG.keys.pressed.CONTROL ? -1 : 0);
-							FlxG.switchState(new AutoOffsetState());
-						}
-						
 					case 1: //Accuracy
 						if (controls.RIGHT_P)
 							{
@@ -361,7 +322,7 @@ class ConfigMenu extends MusicBeatState
 						if (controls.ACCEPT) {
 							FlxG.sound.play('assets/sounds/scrollMenu' + TitleState.soundExt);
 							canChangeItems = false;
-							Config.write(offsetValue, accuracyType, healthValue / 10.0, healthDrainValue / 10.0, iconValue, downValue, inputValue, glowValue, randomTapValue, noCapValue);
+							Config.write(offsetValue, accuracyType, healthValue / 10.0, healthDrainValue / 10.0, iconValue, downValue, inputValue, glowValue, randomTapValue, noCapValue, timedVocalsValue);
 							FlxG.switchState(new KeyBindMenu());
 						}
 					
@@ -370,7 +331,7 @@ class ConfigMenu extends MusicBeatState
 
 		if (controls.BACK)
 		{
-			Config.write(offsetValue, accuracyType, healthValue / 10.0, healthDrainValue / 10.0, iconValue, downValue, inputValue, glowValue, randomTapValue, noCapValue);
+			Config.write(offsetValue, accuracyType, healthValue / 10.0, healthDrainValue / 10.0, iconValue, downValue, inputValue, glowValue, randomTapValue, noCapValue, timedVocalsValue);
 			canChangeItems = false;
 			FlxG.sound.music.stop();
 			FlxG.sound.play('assets/sounds/cancelMenu' + TitleState.soundExt);
@@ -394,7 +355,7 @@ class ConfigMenu extends MusicBeatState
 		if (FlxG.keys.justPressed.Q)
 		{
 			canChangeItems = false;
-			Config.write(offsetValue, accuracyType, healthValue / 10.0, healthDrainValue / 10.0, iconValue, downValue, inputValue, glowValue, randomTapValue, noCapValue);
+			Config.write(offsetValue, accuracyType, healthValue / 10.0, healthDrainValue / 10.0, iconValue, downValue, inputValue, glowValue, randomTapValue, noCapValue, timedVocalsValue);
 			FlxG.switchState(new KeyBindQuick());
 		}
 		#end
@@ -411,8 +372,8 @@ class ConfigMenu extends MusicBeatState
 		configSelected += huh;
 			
 		if (configSelected > settingText.length - 1)
-			configSelected = 1;
-		if (configSelected < 1)
+			configSelected = 0;
+		if (configSelected < 0)
 			configSelected = settingText.length - 1;
 			
 	}
@@ -421,7 +382,7 @@ class ConfigMenu extends MusicBeatState
 
         configText.text = "";
 
-        for(i in 1...settingText.length - 1){
+        for(i in 0...settingText.length - 1){
 
             var textStart = (i == configSelected) ? ">" : "  ";
             configText.text += textStart + settingText[i] + ": " + getSetting(i) + "\n";
@@ -439,7 +400,7 @@ class ConfigMenu extends MusicBeatState
 
 		switch(r){
 
-			case 0: return offsetValue;
+			case 0: return timedVocalsValue;
 			case 1: return accuracyType;
 			case 2: return noCapValue;
 			case 3: return inputValue;

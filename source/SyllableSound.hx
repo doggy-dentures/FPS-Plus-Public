@@ -23,6 +23,7 @@ class SyllableSound
 	var currentSource:Int = 0;
 	var isPaused:Bool = false;
 	var ttl:Float = 0;
+	var muted:Bool = false;
 
 	public function new(playerName:String, syllable:String, loop:Bool = true)
 	{
@@ -143,11 +144,21 @@ class SyllableSound
 	{
 		for (i in 0...sources.length)
 		{
-			if (FlxG.sound.muted)
+			if (FlxG.sound.muted || muted)
 				AL.sourcef(sources[i], AL.GAIN, 0);
 			else if (inUse[i])
-				AL.sourcef(sources[i], AL.GAIN, Conductor.masterVolume * volume * FlxG.sound.volume);
+				AL.sourcef(sources[i], AL.GAIN, Conductor.masterVolume * volume * FlxG.sound.volume );
 		}
+	}
+
+	public function mute()
+	{
+		muted = true;
+	}
+
+	public function unmute()
+	{
+		muted = false;
 	}
 
 	public function loopOn()
